@@ -1,0 +1,17 @@
+simulation: true
+description: >-
+  Cenários simulados de política de reposição. Lead time e estoque físico
+  não são fornecidos pela fonte. Os valores abaixo são hipóteses de planejamento,
+  não observações, garantias de serviço ou recomendações calibradas.
+
+# A definição operacional de service_level será documentada antes da implementação.
+scenarios:
+  lean:
+    lead_time_days: 1
+    service_level: 0.90
+  base:
+    lead_time_days: 2
+    service_level: 0.95
+  protected:
+    lead_time_days: 3
+    service_level: 0.98

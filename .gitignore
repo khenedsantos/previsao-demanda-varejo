@@ -1,0 +1,51 @@
+# Ambiente local e caches Python/Jupyter
+/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+/.jupyter/
+/.ipython/
+/.matplotlib/
+
+# Artefatos de empacotamento
+*.egg-info/
+/build/
+/dist/
+
+# Dados e saídas locais: preservar somente os marcadores de diretório
+/data/raw/*
+!/data/raw/.gitkeep
+/data/staging/*
+!/data/staging/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
+/data/outputs/*
+!/data/outputs/.gitkeep
+*.duckdb
+*.duckdb.wal
+
+# Segredos: o exemplo de configuração permanece versionado
+.env
+.env.*
+!.env.example
+/secrets/
+*.pem
+*.key
+credentials.json
+service-account*.json
+
+# Temporários, logs e estado local
+/.tmp/
+*.tmp
+*.temp
+*.log
+*.swp
+*.swo
+~$*
+.DS_Store
+Thumbs.db
+
+# Estado local do Power BI; definições e documentação permanecem versionadas
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

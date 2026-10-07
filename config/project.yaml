@@ -1,0 +1,22 @@
+project_name: previsao-demanda-varejo
+dataset: FreshRetailNet-50K
+forecast_horizon_days: 7
+preferred_format: parquet
+
+raw:
+  immutable: true
+
+# Caminhos relativos à raiz do repositório.
+directories:
+  raw: data/raw
+  staging: data/staging
+  processed: data/processed
+  outputs: data/outputs
+  src: src
+  sql: sql
+  notebooks: notebooks
+  tests: tests
+  scripts: scripts
+  config: config
+  powerbi: powerbi
+  docs: docs
