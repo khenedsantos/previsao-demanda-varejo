@@ -18,7 +18,8 @@ Registrar a organização técnica e as responsabilidades de cada etapa.
 
 ## Estado atual
 
-Fase 1 implementada: ingestão e qualidade. Etapas analíticas posteriores continuam pendentes.
+Fase 1 implementada e commitada: ingestão e qualidade. Fase 2 implementada: perfil descritivo
+de train, análise de disponibilidade e notebook de apresentação. ABC/XYZ, previsão e reposição pendentes.
 
 ## Execução e contratos
 
@@ -33,4 +34,19 @@ O staging existente é conferido, sem sobrescrita silenciosa. A publicação ini
 
 DuckDB usa duas threads, limite de memória de 1 GB e spill temporário limitado a 2 GB em `.tmp/duckdb`. Não há banco persistente nem carregamento integral em pandas. Temporários de download e staging ficam em `.tmp/`. O teste de reprodução cria uma cópia temporária do staging e a remove ao terminar.
 
-Dados, ambiente, caches e segredos são ignorados. Código, SQL, configurações e documentação ficam no Git. Nenhum notebook, feature, modelo ou dashboard foi criado nesta fase.
+Dados, ambiente, caches e segredos são ignorados. Código, SQL, configurações e documentação ficam no Git. Nenhum notebook, feature, modelo ou dashboard foi criado na Fase 1.
+
+## Contrato da Fase 2
+
+`scripts/build_demand_profile.py` verifica e abre **apenas train.parquet**. A leitura exclusiva evita
+que o staging combinado exponha eval à exploração. `src/features/demand_profile.py` executa
+`sql/analytical/demand_profile.sql` depois de aplicar o corte temporal, produzindo o mart por série,
+tabelas de weekday/semana, curvas de concentração e exemplos selecionados por regra.
+
+O resumo JSON referencia hashes dos seis outputs Parquet e o hash/revisão da fonte. A documentação
+é gerada por `src/reporting/demand_understanding_report.py`. O notebook de nove figuras só consome
+outputs, usando `src/reporting/demand_understanding_plots.py`; sua execução reproduzível está em
+`scripts/render_data_understanding.py`. Nenhuma regra crítica depende de execução manual de células.
+
+Dados gerados continuam fora do Git. O notebook executado e o relatório ficam disponíveis para revisão.
+A validação reconstrói os outputs em uma raiz sem eval e verifica igualdade de hashes no mesmo runtime.

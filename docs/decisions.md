@@ -34,3 +34,23 @@ Para cada nova decisão: data, contexto, alternativas, escolha e consequências.
 | Manter testes de integração com a fonte local | Contratos reais e reprodução completa do staging | Executar ingestão e validação antes do pytest |
 
 Os resultados e limites estão em [data_quality_report.md](data_quality_report.md). Não houve escolha de modelo, reconstrução de demanda, segmentação ou política de reposição nesta fase.
+
+## Fase 2 — 2026-10-08
+
+| Decisão | Justificativa | Consequência |
+|---|---|---|
+| Abrir somente train.parquet | Eval é holdout final; staging mistura as duas partições | Pipeline da Fase 2 funciona mesmo sem eval e staging presentes |
+| Perfil ao corte explícito | Evitar uso de observações posteriores à origem | Filtro anterior a métricas, quantis e exemplos; recalcular em cada origem futura |
+| Interpretar *_demand como venda observada normalizada | Não há demanda latente identificada nem unidade física confirmada | Nenhuma imputação, previsão ou decisão de compra |
+| Desvio amostral e epsilon numérico 1e-9 | CV indefinido para médias próximas de zero | Nulos preservados; nenhuma classe XYZ associada |
+| ADI=n_days/positive_days e CV² dos valores positivos | Descrever ocorrência e tamanho da venda positiva | Sem thresholds; ADI é redundante com zero_ratio nesta cobertura completa |
+| Pearson lag 7 e estabilidade em semanas completas | Explicitar estimador e evitar semanas parciais | 12 semanas; comparação dos perfis normalizados de duas metades |
+| Comparar ruptura/atividade também dentro de cada série | A média global mistura níveis e frequências distintas | Comparações pareadas descritivas, sem inferência causal |
+| Preservar discount=0 e >1 em contagens separadas | 34 valores >1 encontrados em train, produto 37, seis lojas | Sem correção; atividade e desconto não são sinônimos |
+| Curvas em três níveis sem rótulos ABC | Concentração muda muito com o grão | Contribuição normalizada; regra de segmentação segue pendente |
+| Exemplos por quartis empíricos e máximos válidos | Evitar seleção visual oportunista | Critérios e desempates registrados no resumo; não são classes operacionais |
+| Relatório, seis Parquet, JSON e notebook de nove figuras | Separar cálculo reproduzível de apresentação | Lógica em SQL/src; outputs e figuras ignorados pelo Git |
+
+Resultados completos em [demand_understanding_report.md](demand_understanding_report.md).
+As escolhas acima descrevem apenas esta análise exploratória. Não congelam thresholds ABC/XYZ
+nem metodologia de previsão e não autorizam avanço para outra fase.
