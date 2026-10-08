@@ -19,7 +19,8 @@ Registrar a organização técnica e as responsabilidades de cada etapa.
 ## Estado atual
 
 Fase 1 implementada e commitada: ingestão e qualidade. Fase 2 implementada: perfil descritivo
-de train, análise de disponibilidade e notebook de apresentação. ABC/XYZ, previsão e reposição pendentes.
+de train, análise de disponibilidade e notebook de apresentação, aprovada e commitada.
+Fase 3 implementada: ABC por produto, XYZ por série e exposição separada. Previsão e reposição pendentes.
 
 ## Execução e contratos
 
@@ -50,3 +51,23 @@ outputs, usando `src/reporting/demand_understanding_plots.py`; sua execução re
 
 Dados gerados continuam fora do Git. O notebook executado e o relatório ficam disponíveis para revisão.
 A validação reconstrói os outputs em uma raiz sem eval e verifica igualdade de hashes no mesmo runtime.
+
+## Contrato da Fase 3
+
+`scripts/build_segmentation.py` lê somente train e os outputs aprovados da Fase 2. A identidade
+do raw, o hash/proveniência do perfil e a janela são verificados antes do cálculo. Chaves, dias e
+totais de venda por série são conciliados com o train até o corte.
+
+Em `src/segmentation/`, `abc.py` trata a contribuição global por produto, `xyz.py` deriva regras
+categóricas de duas métricas, `stockout_exposure.py` mantém disponibilidade separada, e
+`operational_profile.py` executa e valida as junções. `sql/analytical/segmentation.sql` contém
+as agregações de contribuição, matriz e exposição. Não há framework interno ou score composto.
+
+Quatro marts são publicados em processed: produto/ABC, série/XYZ, exposição e perfil operacional.
+Sete Parquet de suporte e resumo com hashes ficam em outputs/segmentation. Relatório e gráficos
+ficam nos módulos de reporting; `scripts/render_segmentation.py` executa o notebook de nove figuras,
+consumindo apenas outputs. Nenhuma lógica crítica é exclusiva de célula de notebook.
+
+O mart de entrada precisa corresponder exatamente ao corte solicitado. ABC, XYZ e quantis do
+train integral não podem ser reaproveitados em origens anteriores. Nenhum backtesting é executado
+nesta fase. Os outputs são reproduzidos por hash em uma raiz sem eval ou staging.

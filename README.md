@@ -14,7 +14,10 @@ FreshRetailNet-50K, publicado por Dingdong-Inc no Hugging Face (versão 1.0, CC 
 
 ## Status
 
-Em desenvolvimento. Fase 1: ingestão e qualidade estrutural/semântica, commitada. Fase 2: entendimento da venda observada e disponibilidade, exclusivamente train; resultados em [demand_understanding_report.md](docs/demand_understanding_report.md). Nenhuma segmentação ABC/XYZ, previsão ou reposição implementada.
+Em desenvolvimento. Fases 1 e 2 aprovadas e commitadas: ingestão/qualidade e entendimento de train.
+Fase 3 implementada: ABC por produto, XYZ por série e exposição à ruptura como dimensões separadas;
+resultados em [segmentation_report.md](docs/segmentation_report.md). Nenhuma previsão, backtesting
+ou política de reposição implementada.
 
 ## Arquitetura resumida
 
@@ -60,3 +63,22 @@ outputs de suporte em `data/outputs/demand_understanding/` e o relatório da Fas
 O segundo executa [01_data_understanding.ipynb](notebooks/01_data_understanding.ipynb), com nove figuras
 baseadas nos outputs. Os nomes `*_demand` medem venda observada normalizada, não demanda latente.
 Definições, tratamento de métricas indefinidas e regras dos exemplos estão em [methodology.md](docs/methodology.md).
+
+## Reproduzir a Fase 3
+
+Após gerar os outputs da Fase 2:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_segmentation.py
+.\.venv\Scripts\python.exe scripts/render_segmentation.py
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pip check
+```
+
+O pipeline verifica a proveniência de train, recalcula ABC por produto e cria os marts de ABC,
+XYZ, exposição e perfil operacional em processed. O notebook [02_segmentation.ipynb](notebooks/02_segmentation.ipynb)
+contém nove figuras baseadas nos outputs. As razões de XYZ, thresholds e alternativas comparadas
+ficam registradas no relatório e no resumo de execução. Nenhum score composto é criado.
+
+As classes descrevem o train até 25/06/2024. No backtesting futuro, recalcular perfil, ABC/XYZ e
+quantis em cada origem, sem reutilizar retrospectivamente o retrato integral. Eval permanece congelado.

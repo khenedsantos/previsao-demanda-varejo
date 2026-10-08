@@ -141,7 +141,171 @@ Testes sintéticos cobrem constantes, zeros, média quase nula, periodicidade se
 extremos de desconto e calendário inválido. Uma mutação extrema de todos os dias posteriores
 ao corte não pode mudar nenhuma métrica, resumo ou exemplo calculado naquele corte.
 
-## Pendências das próximas fases
+## Pendências registradas ao encerrar a Fase 2
 
 Definir segmentação e seu uso temporal, baselines/backtesting, incerteza e política simulada
 somente após revisão desta fase. Nenhum modelo, ABC/XYZ definitivo ou previsão foi implementado.
+
+## Fase 3 — segmentação e perfil operacional
+
+O objetivo desta fase é manter separadas três dimensões: relevância global do produto (ABC),
+estabilidade observada da série loja-produto (XYZ) e exposição à ruptura/possível censura.
+Não há score composto, peso, clustering, forecasting ou política de reposição.
+
+### Entradas e proveniência
+
+`scripts/build_segmentation.py` verifica a identidade de **train.parquet** e recalcula a contribuição
+dos produtos diretamente de `sale_amount`. Para XYZ e disponibilidade usa o mart da Fase 2,
+verificando seu hash, o resumo de proveniência, a partição train, datas e cobertura. Também confere
+chaves, número de dias e somas por série contra train lido até o corte. Nenhum arquivo eval,
+staging combinado ou relatório global da Fase 1 é lido pelo pipeline da Fase 3.
+
+O corte integral é 25/06/2024. Um corte anterior só é aceito se o perfil da Fase 2 tiver sido
+recalculado para exatamente a mesma data; o mart integral é recusado nesse caso. Não existe
+implementação de folds ou backtesting nesta fase.
+
+### ABC por contribuição de venda normalizada
+
+Grão: product_id. O total de cada produto é a soma de sale_amount no train. Produtos são
+ordenados por total decrescente e product_id crescente. A participação é total do produto / total
+do painel, com acumulado nessa ordem e ranking iniciado em 1.
+
+Se P é a participação acumulada **antes** do produto:
+
+- A se P < 0,80;
+- B se 0,80 ≤ P < 0,95;
+- C se P ≥ 0,95.
+
+O produto que cruza a fronteira permanece na classe cujo intervalo completa. Igualdade numérica
+com 0,80/0,95, por tolerância absoluta de 1e-12 na participação, significa fronteira já atingida;
+o próximo produto inicia o intervalo seguinte. Empates são resolvidos pelo identificador, sem
+forçar todos os empatados à mesma classe. Um produto muito dominante pode cruzar dois limites
+de uma vez; não se força a existência de todas as classes em qualquer universo sintético.
+
+Os resultados reais (122 A, 167 B, 576 C) são checks de regressão, não constantes da classificação.
+A classe é propagada por produto para as séries e nunca recalculada por loja-produto. A contribuição
+não é financeira e também reflete o número de lojas presentes no painel para cada produto.
+
+### Avaliação e escolha das métricas XYZ
+
+Foram calculadas correlações Pearson e Spearman por pares válidos entre CV diário, CV semanal,
+correlação da forma semanal entre metades, MAE da forma, lag 7, zeros e ADI. As contagens de pares
+são preservadas. CV diário/semanal têm Pearson 0,8109; CV semanal/correlação da forma, −0,0972.
+ADI e zero_ratio têm relação determinística monotônica e Spearman 1.
+
+Escolha mínima: **CV semanal + correlação da forma entre metades**. São eixos distintos de
+variação dos totais entre semanas e persistência do perfil de weekday. CV diário e MAE permanecem
+diagnósticos, evitando acrescentar cortes parcialmente redundantes. Lag 7 não domina a regra.
+Zero_ratio fica como diagnóstico: as 74 séries com maioria de zeros já recebem Z. Não se usa ADI
+como segundo sinal de intermitência nem se introduz exceção adicional para esse grupo.
+
+Quatro alternativas foram calculadas e ficam registradas com thresholds, contagens, medianas por
+classe e número de séries que mudam em relação à escolhida:
+
+| Alternativa | CV baixo/alto | Forma baixa/boa |
+|---|---|---|
+| Semanal, quartis | p25 / p75 | p25 / p75 |
+| Semanal, mediana e caudas (escolhida) | p50 / p75 | p25 / p50 |
+| Semanal, tercis | p33⅓ / p66⅔ | p33⅓ / p66⅔ |
+| Diário, mediana e caudas | p50 / p75 | p25 / p50 |
+
+Quantis usam interpolação linear e apenas valores válidos de train. Não se demonstrou uma quebra
+natural única nas distribuições. A convenção escolhida considera X a interseção das metades
+favoráveis e Z a união das caudas desfavoráveis. Não há cotas de tamanho nem escolha por erro de
+previsão. Quartis restringiam X a 3.448 séries; tercis ampliavam Z a 27.085. A alternativa escolhida
+preserva contraste descritivo com grupos utilizáveis, sem impor equilíbrio artificial.
+
+### Regra XYZ escolhida (weekly_median_tail)
+
+Prioridade de aplicação:
+
+1. Z se CV semanal ≥ p75 **ou** correlação da forma ≤ p25.
+2. X se não houver critério Z, CV semanal ≤ p50 **e** correlação da forma ≥ p50.
+3. Y nos demais casos.
+
+Thresholds calculados nesta execução: CV p50=0,265992446005; CV p75=0,381015820606;
+correlação p25=0,058267078628; correlação p50=0,394743548722. O código deriva esses valores do
+perfil; não contém esses números como constantes. Empates permanecem juntos; Z prevalece se
+limites coincidirem. ABC, stockout_rate, horas de ruptura, flag de censura e activity_rate não
+participam do cálculo de XYZ.
+
+Uma métrica indefinida permanece nula. Se a outra métrica válida atende ao critério Z, usa-se Z
+com razão de fallback; caso contrário, Y_INCOMPLETE_METRICS exige revisão sem presumir estabilidade.
+As quatro séries reais sem forma válida têm CV semanal entre 1,3119 e 1,9164 e recebem
+Z_HIGH_CV_NO_PATTERN. Todas as 50.000 séries têm uma classe e uma razão auditável.
+
+Razões compactas: X_LOW_CV_STABLE, Y_INTERMEDIATE, Z_HIGH_CV, Z_LOW_STABILITY, Z_BOTH,
+Z_HIGH_CV_NO_PATTERN, Z_LOW_PATTERN_NO_CV e Y_INCOMPLETE_METRICS. O relatório contém suas definições.
+
+A validação compara as classes em CV diário/semanal, correlação/MAE da forma, lag 7, zeros,
+venda média e diferença relativa de fim de semana. A separação nas métricas da regra é esperada
+por construção e não comprova previsibilidade. Lag 7 não acompanha a ordem X/Y/Z; desempenho
+de forecast permanece uma hipótese a testar em fase posterior.
+
+### Exposição à ruptura e flag de possível censura
+
+A dimensão de disponibilidade usa stockout_rate exclusivamente para os rótulos:
+
+- HIGH se taxa ≥ p75 (0,522222222222 nesta janela);
+- LOW se taxa ≤ p25 (0,344444444444), sem atender HIGH;
+- MEDIUM nos demais casos.
+
+HIGH prevalece se os quantis coincidirem. As classes são relativas ao painel. LOW pode ter até
+34,44% dos dias afetados; não é nível de serviço nem evidência de disponibilidade adequada.
+Horas totais, maior sequência e duração média nos dias afetados ficam como métricas de suporte.
+As duas primeiras aumentam nas medianas LOW→HIGH, mas a duração por dia afetado diminui: não se
+afirma que frequência resume toda a severidade da ruptura.
+
+`censoring_risk_flag = (stockout_rate >= p75) AND (zero_ratio >= p75)`.
+O p75 de zero_ratio é 0,055555555556 (cinco dias em 90). Ambos os limites são recalculados.
+Os 2.651 casos confirmam o achado anterior; a flag indica alta exposição à **possível censura**,
+sem quantificar demanda perdida e sem afirmar causalidade. Não entra no XYZ.
+
+### Contratos dos outputs e matriz operacional
+
+| Output | Grão e conteúdo |
+|---|---|
+| mart_product_abc.parquet | product_id; total, participação, acumulado atual/anterior, ranking, classe e séries associadas |
+| mart_series_xyz.parquet | store_id+product_id; duas métricas utilizadas, classe, regra e razão |
+| mart_stockout_exposure.parquet | store_id+product_id; exposição, flag e métricas de disponibilidade |
+| mart_operational_profile.parquet | store_id+product_id; ABC propagado, XYZ, exposição, flag, razões, janela e métricas de suporte |
+| data/outputs/segmentation/ | Correlações, alternativas, perfis por classe, matriz, cubo de exposição, exemplos e resumo com hashes |
+
+O perfil operacional é a junção de dimensões, sem score final. A matriz ABC×XYZ contém as nove
+células, contagem de séries/produtos, venda total e participação global, ruptura média/mediana,
+quantidade/fração de flags e quantidade de HIGH. Produtos podem estar em várias classes XYZ;
+seus counts não são aditivos. Série e venda são aditivas. Perfis prioritários A+flag se sobrepõem
+a AX/AY/AZ+HIGH e não devem ser somados como grupos exclusivos.
+
+### Exemplos sem seleção visual
+
+- AX com maior venda total;
+- AX com maior stockout_rate;
+- AZ com maior stockout_rate;
+- A com flag, maior stockout_rate e depois maior zero_ratio, sem score numérico de risco;
+- CX e CZ mais próximos da mediana de CV semanal da própria combinação.
+
+Desempate por store_id, depois product_id. Proximidade à mediana refere-se somente à métrica
+declarada, não a um centróide multidimensional. Uma série pode ser escolhida por mais de uma regra.
+O notebook apenas consome esses exemplos e os demais outputs; não recalcula regras analíticas.
+
+### Reprodução, testes e prevenção de leakage
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_segmentation.py
+.\.venv\Scripts\python.exe scripts/render_segmentation.py
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pip check
+git diff --check
+git status
+```
+
+Os testes cobrem fronteiras ABC, igualdade exata, empates, contribuições inválidas, thresholds
+recalculados, invariância de XYZ a alterações em disponibilidade/ABC/atividade, nulos, propagação,
+matriz e conservação de totais. Os 11 Parquet e o resumo JSON são reconstruídos em raiz temporária
+sem eval nem staging e comparados por hash no runtime registrado. O notebook tem nove figuras.
+
+**No backtesting futuro, ABC/XYZ, thresholds e quantis deverão ser recalculados com dados
+disponíveis até cada origem temporal quando usados como features ou critérios de decisão.**
+Não reutilizar retrospectivamente a classificação do train completo. A guarda de corte não substitui
+a futura validação do desenho temporal. Forecasting/backtesting seguem fora desta fase.

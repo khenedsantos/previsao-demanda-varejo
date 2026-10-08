@@ -54,3 +54,23 @@ Os resultados e limites estão em [data_quality_report.md](data_quality_report.m
 Resultados completos em [demand_understanding_report.md](demand_understanding_report.md).
 As escolhas acima descrevem apenas esta análise exploratória. Não congelam thresholds ABC/XYZ
 nem metodologia de previsão e não autorizam avanço para outra fase.
+
+## Fase 3 — 2026-10-08
+
+| Decisão | Evidência/justificativa | Consequência |
+|---|---|---|
+| ABC oficial por produto, propagado às séries | Forte concentração por produto na Fase 2; grão autorizado | 122 A, 167 B, 576 C, sem ABC local por loja-produto |
+| Classificar pelo acumulado anterior ao item | Preservar o produto que cruza 80%/95% no intervalo completado | Fronteira auditável, desempate por product_id e tolerância numérica 1e-12 |
+| Recalcular ABC diretamente de train | Rastreabilidade da contribuição normalizada | Nenhum uso de eval ou informação financeira inexistente |
+| XYZ com CV semanal e correlação da forma | CV diário/semanal redundantes em parte (r=0,81); CV semanal/forma pouco associados | Duas métricas complementares; demais ficam para diagnóstico |
+| Regra categórica mediana/caudas | Quatro alternativas calculadas; separação descritiva e ausência de quotas | X favorável em ambos os eixos; Z desfavorável em pelo menos um; Y intermediário |
+| Preservar nulos e usar fallback explícito | Quatro séries sem forma válida têm CV semanal elevado | Z_HIGH_CV_NO_PATTERN; nenhuma série descartada ou correlação imputada |
+| Zero_ratio apenas diagnóstico, ADI não entra | ADI é transformação de zero_ratio; 74 séries majoritariamente zeradas já estão em Z | Evitar dupla contagem e exceção desnecessária |
+| Exposição separada de XYZ | Frequência de ruptura tem interpretação distinta de estabilidade | LOW/MEDIUM/HIGH por p25/p75 recalculados; nenhuma ponderação composta |
+| Flag ruptura≥p75 e zeros≥p75 | Reproduz 2.651 séries com alta coincidência de zeros e ruptura | Sinal de possível censura, não demanda perdida comprovada |
+| Manter ABC, XYZ, exposição e flag em colunas separadas | Preservar interpretação operacional de cada dimensão | Matriz e perfis prioritários, sem score ou política de reposição |
+| Registrar sensibilidade e limites preditivos | Mudar de CV semanal para diário altera 9.226 séries; lag 7 não ordena X/Y/Z | XYZ é estabilidade observada; utilidade preditiva será testada posteriormente |
+| Conferir corte e cadeia de hashes de entrada | Impedir reaproveitamento silencioso do perfil integral em data anterior | Recalcular perfil/quantis/classes por origem no backtesting futuro |
+
+Regras e resultados em [segmentation_report.md](segmentation_report.md). A implementação desta fase
+não autoriza forecasting, backtesting ou reposição. Nenhum commit final é feito sem autorização.

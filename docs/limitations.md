@@ -48,3 +48,33 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
   vazamento; a função suporta corte anterior, mas o desenho de backtesting ainda está pendente.
 - Reprodutibilidade por hash é testada com as versões registradas. As dependências do projeto ainda
   não têm arquivo de lock; mudança de versão pode alterar ordem numérica/serialização e requer validação.
+
+## Limitações específicas da Fase 3
+
+- ABC usa contribuição de venda observada normalizada. Censura pode subestimar a relevância de
+  produtos; número de lojas por produto também influencia o total. Não é ABC financeiro.
+- O ABC global do produto é igual em suas séries, mesmo quando uma loja tem venda local baixa.
+  Contagens de produtos na matriz ABC×XYZ não são aditivas entre células.
+- Os cortes XYZ/exposição são convenções relativas derivadas dos quantis de train. Não existe
+  limite universal ou quebra natural única demonstrada. Mudar a regra altera classes; o relatório
+  registra quatro alternativas, incluindo 9.226 trocas ao usar CV diário em lugar de semanal.
+- A distinção X/Y/Z nas métricas utilizadas é esperada por construção. Não constitui validação
+  independente de previsibilidade; lag 7 é maior na mediana de Z que na de X. Ainda não há erro
+  de forecast ou backtesting para comprovar utilidade preditiva dos segmentos.
+- CV semanal evita dupla contagem com o CV diário, mas não descreve toda a oscilação intrassemanal.
+  Correlação de forma pode ser instável quando o perfil é quase plano e não mede igualdade de nível;
+  as séries têm só 12 semanas completas. MAE e CV diário continuam como diagnósticos.
+- Separar ruptura de XYZ não remove sua influência indireta na venda observada. Promoção,
+  calendário, mudança de nível e censura também afetam CV e estabilidade.
+- Quatro séries sem correlação válida recebem Z pela outra métrica, com fallback explícito.
+  Em futuros cortes, ausência de evidência suficiente leva a Y_INCOMPLETE_METRICS e exige revisão,
+  sem afirmar que a série tem comportamento intermediário comprovado.
+- LOW de exposição significa frequência relativamente menor, não disponibilidade adequada:
+  pode incluir ruptura em 34,44% dos dias. HIGH mede frequência, não severidade completa;
+  duração média nos dias afetados tem mediana menor em HIGH que em LOW.
+- A flag de censura aponta associação de ruptura e zeros, não perda comprovada. Sua ausência
+  não demonstra demanda não censurada. Não existe score contínuo de risco nem causalidade estimada.
+- Perfis A+flag se sobrepõem a AX/AY/AZ+HIGH. Somá-los contaria séries/vendas repetidamente.
+  Exemplos próximos à mediana são típicos somente no CV semanal, sem representatividade universal.
+- As classificações do train completo são descritivas em 25/06/2024. Reutilizá-las em folds
+  anteriores causaria leakage; recalcular ABC/XYZ/quantis por origem quando usados temporalmente.
