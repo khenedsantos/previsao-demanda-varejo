@@ -9,8 +9,8 @@ Registrar como o histórico de vendas será usado para apoiar decisões e comuni
 - Qualidade dos dados e limites da observação de demanda.
 - Tendência, sazonalidade e volatilidade.
 - Baseline e backtesting temporal, sem divisão aleatória de treino e teste.
-- Avaliação com MAE, RMSE, WAPE e bias; fórmulas e convenções ainda serão definidas.
-- Segmentação ABC/XYZ; critérios ainda serão definidos.
+- Avaliação com MAE, RMSE, WAPE e bias; fórmulas e convenções definidas na Fase 4 abaixo.
+- Segmentação ABC/XYZ; critérios definidos na Fase 3 e recalculados por origem na Fase 4.
 - Simulação de reposição, estoque de segurança, ponto de reposição e cobertura.
 - Comunicação de incerteza e risco operacional.
 
@@ -309,3 +309,98 @@ sem eval nem staging e comparados por hash no runtime registrado. O notebook tem
 disponíveis até cada origem temporal quando usados como features ou critérios de decisão.**
 Não reutilizar retrospectivamente a classificação do train completo. A guarda de corte não substitui
 a futura validação do desenho temporal. Forecasting/backtesting seguem fora desta fase.
+
+## Fase 4 — Baselines e backtesting temporal
+
+As restrições de escopo anteriores descrevem cada fase. Nesta Fase 4, somente Naive e Seasonal
+Naive são autorizados. Target: `sale_amount`, venda observada normalizada. Eval permanece reservado;
+a execução lê exclusivamente raw train, sem staging ou marts full-train anteriores.
+
+### Origens e informação disponível
+
+Horizonte único de sete dias, em quatro folds de histórico crescente. Datas e desenho foram
+reportados antes de congelar a implementação. Histórico inicia em 28/03/2024:
+
+| Fold | Fim do histórico | Dias | Origem / início do teste | Fim do teste |
+|---|---|---|---|---|
+| 1 | 28/05/2024 | 62 | 29/05/2024 | 04/06/2024 |
+| 2 | 04/06/2024 | 69 | 05/06/2024 | 11/06/2024 |
+| 3 | 11/06/2024 | 76 | 12/06/2024 | 18/06/2024 |
+| 4 | 18/06/2024 | 83 | 19/06/2024 | 25/06/2024 |
+
+`forecast_origin` é o primeiro dia previsto **antes** de sua observação; `cutoff_date=origin−1`.
+Os testes não se sobrepõem. O primeiro histórico conserva oito semanas completas para XYZ;
+quatro folds equilibram histórico e repetição da avaliação nos 90 dias disponíveis.
+Não existe shuffle, partição aleatória, teste de múltiplos horizontes ou escolha com eval.
+
+Por origem, o filtro de data antecede todas as métricas do perfil e todos os quantis. ABC por
+produto, regra XYZ mediana/caudas, exposição e flag usam somente esse prefixo. Regras da Fase 3
+permanecem iguais; parâmetros são novamente estimados. O resumo registra thresholds, nulos
+e contagens por origem; não há análise retrospectiva misturada com a avaliação prospectiva.
+
+A duração média da ruptura nos dias afetados é nula quando nenhum dia foi afetado. Dois casos
+no primeiro fold e um no segundo exigiram aceitar esse nulo somente quando taxa, horas totais
+e maior sequência são zero. Trata-se de uma extensão da validação de suporte, sem imputação
+ou mudança de regras. A reprodução da Fase 3 permanece coberta pelos testes.
+
+### Previsões e métricas
+
+Naive repete a venda no cutoff nos sete dias. Seasonal Naive copia a venda exatamente sete
+dias antes de cada target_date; todos esses valores precedem a origem. Forecasts ficam prontos
+antes da união com actuals do horizonte. Grão: store_id+product_id+forecast_origin+target_date+model;
+fold_id, cutoff_date, horizon_step (1–7) e source_observation_date permitem rastrear a origem.
+
+Para `e=forecast−actual`, N previsões e D=soma(actual):
+
+| Métrica | Fórmula | Interpretação |
+|---|---|---|
+| MAE | soma(abs(e))/N | Erro absoluto na escala normalizada |
+| RMSE | sqrt(soma(e²)/N) | Maior peso aos erros grandes |
+| WAPE | soma(abs(e))/D | Erro relativo agregado; indefinido se D=0 |
+| Bias | soma(e)/N | Assinado: negativo indica subprevisão |
+| Bias percentual | soma(e)/D | Assinado; indefinido se D=0 |
+
+Não há MAPE. Nulos não viram zeros. Consolidações usam somas suficientes, não a média de
+percentuais/RMSEs das séries. O mart traz N, D, soma de forecasts, erros absolutos, quadráticos
+e assinados, além de contagens de séries/produtos/folds e flag de percentual indefinido.
+
+Níveis: série×fold×modelo, série×modelo, fold×modelo, global×modelo, ABC, XYZ, exposição, flag e
+ABC×XYZ por modelo. Mais cinco níveis segmento×fold atendem à estabilidade, sem cortes extras
+arbitrários. Cada level tem dimensões aplicáveis e demais campos nulos. Filtrar level antes de
+somar evita duplicação. A série consolidada não recebe rótulo temporal único. Contagens distintas
+podem se sobrepor entre grupos porque classes mudam por fold; não somá-las como entidades únicas.
+
+Melhoria relativa `(Naive−Seasonal Naive)/Naive` aplica-se a MAE/RMSE/WAPE; positiva favorece SN.
+Referência zero resulta em nulo; não se usa essa fórmula para bias assinado. Referência global
+é o menor WAPE consolidado, com MAE/RMSE, bias e estabilidade relatados como critérios adicionais.
+
+### Comparações, baixa escala e estabilidade
+
+XYZ é testado nos erros futuros de cada corte, sem redefinir classes com base no desempenho.
+X tem menor WAPE que Z nos dois baselines, mas a hipótese de maior estabilidade não é universal:
+Z tem menor desvio/CV do WAPE entre folds no Seasonal Naive. Y tem MAE/RMSE menores que X.
+
+Bias por série agrega os 28 dias antes dos quantis; cortes por ABC/XYZ/exposição/flag usam as
+somas de erros. Subprevisão não é automaticamente risco de ruptura. Diferenças entre grupos são
+associações descritivas, sem controle causal. Denominadores acompanham os resultados: 263 casos
+série×fold por modelo têm D=0; no agregado por série nenhum é indefinido. Baixa escala é descrita
+pelo p05 dos D positivos, sem excluir casos ou criar threshold operacional. Empates no p05 são incluídos.
+
+Estabilidade usa média, desvio amostral ddof=1 e mínimo/máximo por fold para MAE/RMSE/WAPE/bias/bias_pct.
+CV=desvio/média apenas para métricas de erro e média positiva, nunca para bias assinado. A média
+do WAPE entre folds não é o WAPE global consolidado. Quatro folds não equivalem a inferência estatística.
+
+### Exemplos, reprodução e apresentação
+
+Seleção determinística no último fold: menor e maior WAPE SN em AX; menor bias SN negativo em AZ;
+maior WAPE SN entre HIGH; menor bias SN negativo entre flags; maior diferença positiva de
+WAPE(SN)−WAPE(Naive). Desempates por loja e produto. WAPE nulo não concorre em regras de WAPE.
+Sem filtro para esconder baixa escala: os denominadores são exibidos. Os exemplos são extremos
+e descritivos, sem participação em previsão, classificação ou ajuste.
+
+`scripts/run_baseline_backtest.py` publica nove Parquet, JSON de resumo/proveniência e telemetria
+separada; `scripts/render_forecasting_baselines.py` executa dez figuras no notebook. Relatório:
+[forecasting_baselines_report.md](forecasting_baselines_report.md). Lógica reside em src e na SQL
+de perfil aprovada. Testes validam métricas conhecidas, fontes temporais, t−7, grãos, somas,
+thresholds e invariância de forecasts/segmentos após mutar todo o futuro. A reprodução em raiz
+sem eval, staging ou marts compara os nove hashes e summary.json; tempo/memória ficam fora.

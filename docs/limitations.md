@@ -78,3 +78,32 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
   Exemplos próximos à mediana são típicos somente no CV semanal, sem representatividade universal.
 - As classificações do train completo são descritivas em 25/06/2024. Reutilizá-las em folds
   anteriores causaria leakage; recalcular ABC/XYZ/quantis por origem quando usados temporalmente.
+
+## Limitações específicas da Fase 4
+
+- O backtest avalia 28 dos 90 dias de train em quatro origens. Não demonstra comportamento em
+  outras estações, horizontes, novos produtos/lojas ou mudanças prolongadas; eval segue reservado.
+- Forecasting mede venda observada normalizada. Censura, promoções, calendário e mudança de nível
+  podem afetar os erros. Nenhuma variável explica causalmente os resultados e não se estimam perdas.
+- O recálculo prospectivo resolve o uso indevido das classes finais nos folds, mas os rótulos são
+  relativos ao painel e sua composição muda. Métricas agregadas dos grupos misturam essas composições.
+- A relação XYZ com performance é parcial: X supera Z em WAPE nos dois modelos, mas Y tem menor
+  MAE/RMSE que X, e Z tem menor variabilidade entre folds no Seasonal Naive. Não se ajustou a regra.
+- Seasonal Naive vence globalmente e nos quatro folds em WAPE, mas perde ligeiramente em C–Z e
+  na flag. Seu WAPE global tem desvio um pouco maior. Não há dominância em todos os critérios.
+- HIGH tem maior erro absoluto e subprevisão, mas menor WAPE que LOW, por diferenças de escala.
+  Isso não implica previsibilidade intrínseca ou efeito causal da ruptura. Bias negativo não é,
+  por si só, risco de ruptura ou justificativa para decisão de compra.
+- Existem 263 casos série×fold com soma actual zero por modelo. WAPE e bias_pct permanecem nulos.
+  Não há caso assim ao agregar todos os folds. Valores positivos tão pequenos quanto 0,1 produzem
+  WAPEs extremos. P05 serve ao diagnóstico, sem remoção de séries ou threshold operacional.
+- Exemplos usam extremos no último fold e podem ser dominados pela baixa escala; não representam
+  séries típicas. Selecioná-los após observar erros é permitido somente para explicação descritiva.
+- O desvio e CV entre quatro folds resumem variação, não significância ou intervalo de confiança.
+  Vencer nos quatro folds não garante melhora no holdout final. Não houve tuning de modelos.
+- Prefixos menores têm métricas de forma indefinidas e alguns históricos sem ruptura. Fallbacks
+  XYZ permanecem explícitos; duração média sem dias afetados fica nula, sem imputação.
+- Hashes são reproduzidos no runtime registrado. Dependências ainda não têm lock; versões e
+  serialização podem alterar bytes. Telemetria é variável e excluída dos hashes determinísticos.
+- Limite de 1 GB do DuckDB não é limite do processo inteiro: pandas/PyArrow e objetos Python
+  também consomem memória. Pico medido depende do processo; testes e notebook têm custos próprios.

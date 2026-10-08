@@ -74,3 +74,25 @@ nem metodologia de previsão e não autorizam avanço para outra fase.
 
 Regras e resultados em [segmentation_report.md](segmentation_report.md). A implementação desta fase
 não autoriza forecasting, backtesting ou reposição. Nenhum commit final é feito sem autorização.
+
+## Fase 4 — 2026-10-08
+
+| Decisão | Evidência/justificativa | Consequência |
+|---|---|---|
+| Target é venda observada normalizada | Contrato sale_amount e ausência de demanda latente identificada | Sem correção de censura ou interpretação física/financeira |
+| Horizonte único de sete dias | Planejamento curto e padrão semanal; definido antes da avaliação | Nenhuma busca de horizontes com dados futuros |
+| Quatro folds, 62/69/76/83 dias de histórico | Primeiro corte preserva oito semanas completas para XYZ | Testes de 29/05 a 25/06/2024, sem sobreposição |
+| Origem é o primeiro target antes de observá-lo | Convenção explícita evita ambiguidade | Cutoff é origem menos um dia; fonte sempre anterior à origem |
+| Naive constante e Seasonal Naive t−7 | Baselines auditáveis sem tuning | Forecasts precedem a união com actuals; nenhum update no horizonte |
+| Recalcular perfil, ABC/XYZ, quantis e exposição por fold | Retrato full-train produziria leakage temporal | Pipeline só depende de raw train e configurações, não de marts finais |
+| Preservar duração indefinida sem dias de ruptura | Dois casos no fold 1, um no fold 2 | Validação aceita nulo apenas com taxa/horas/sequência zero; classes inalteradas |
+| Métricas consolidadas por somas suficientes | Evitar média de WAPEs e de RMSEs | Percentuais nulos se D=0; nenhum MAPE ou zero artificial |
+| Manter labels temporais em série×fold, não em série consolidada | Grupos podem mudar entre cortes | Nível série agrega erro sem inventar segmento fixo; contar entidades distintas com cuidado |
+| P05 de D positivo apenas diagnóstico | WAPE extremo é instável em pouca venda | Nenhuma exclusão por baixa escala; 263 casos D=0 por modelo no nível série×fold |
+| Escolher Seasonal Naive pelo WAPE global | 42,29% versus 43,49%; ganhos em MAE/RMSE e menor magnitude do bias | Referência global, mantendo exceções C–Z e flag; não é escolha por série |
+| Não ajustar XYZ ao erro | X tem menor WAPE, mas Z é mais estável entre folds em SN | Relação preditiva parcial, sem impor ordenação favorável |
+| Exemplos por extremos e desempate de IDs no último fold | Transparência e uma origem comum | Exibir denominadores; não apresentar como representativos |
+| Separar telemetria de artefatos determinísticos | Tempo e pico de memória variam a cada execução | Nove Parquet e resumo reproduzidos por hash; performance.json fora dessa igualdade |
+
+Resultados e tradeoffs em [forecasting_baselines_report.md](forecasting_baselines_report.md).
+A fase termina na recomendação de referência e validação, sem commit ou avanço automático.

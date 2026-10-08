@@ -17,7 +17,11 @@ def fit_exposure_thresholds(profile):
 
 def classify_exposure(profile, thresholds):
     result = profile[["store_id","product_id",*SUPPORT_METRICS]].copy()
-    if result[SUPPORT_METRICS].isna().any().any():
+    required = [c for c in SUPPORT_METRICS if c != "mean_stockout_hours_when_affected"]
+    allowed_undefined_duration = (result.stockout_rate.eq(0) & result.total_stockout_hours.eq(0)
+                                  & result.maximum_consecutive_stockout_days.eq(0))
+    invalid_duration = result.mean_stockout_hours_when_affected.isna() & ~allowed_undefined_duration
+    if result[required].isna().any().any() or invalid_duration.any():
         raise ValueError("Métrica de disponibilidade indefinida; não atribuir exposição silenciosamente.")
     if not result.stockout_rate.between(0,1).all() or not result.zero_ratio.between(0,1).all():
         raise ValueError("Taxas de ruptura/zero fora de [0,1].")
