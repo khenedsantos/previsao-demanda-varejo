@@ -20,3 +20,7 @@ directories:
   config: config
   powerbi: powerbi
   docs: docs
+
+quality:
+  duckdb_memory_limit: 1GB
+  duckdb_threads: 2
