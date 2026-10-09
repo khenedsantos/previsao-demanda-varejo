@@ -149,3 +149,36 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
   validação, com o runtime padrão do pytest, divergiu até 0,000124 em seis ajustes; usando uma
   thread numérica os mesmos valores foram reproduzidos exatamente. O teste fixa esse contexto
   com threadpoolctl (já presente na stack), sem relaxar tolerâncias ou modificar forecasts.
+
+## Fase 6 — incerteza e risco descritivos
+
+- São apenas 28 erros por série, provenientes de quatro folds; p90/p95 dependem de poucas
+  observações. Quantis empíricos não constituem intervalo preditivo calibrado, nível de serviço
+  ou garantia de cobertura futura. Não se assume independência dos erros para agregar lead time.
+- O retrato final de ABC/XYZ/exposição usa train até 25/06. Serve ao diagnóstico disponível
+  depois dessa data, sem validade prospectiva nos folds anteriores. Os outputs da Fase 5 e
+  suas classes por origem permanecem intactos. Não houve abertura do holdout.
+- Persistência descreve o backtest; a matriz usa o próprio sinal do bias em sua definição.
+  Diferenças de bias entre suas células são parcialmente mecânicas, não validação independente
+  de capacidade preditiva da matriz. Não há escore causal ou estimativa de demanda oculta.
+- O sinal do bias global muda ao excluir fold 4: −2,17% vira +0,98%. Embora 90,59% dos
+  persistentes mantenham bias negativo nesse diagnóstico, não se garante estabilidade futura.
+- Remover diagnosticamente as caudas p01/p99 reduz RMSE de 0,6723 para 0,4705, evidenciando
+  sensibilidade a extremos. Os resultados oficiais incluem todos os registros.
+- D<=p05 inclui 2.501 séries por empates. WAPE mediano de 61,13% coexiste com desvio absoluto
+  menor; WAPE isolado não define risco. Os 263 casos série×fold com D=0 mantêm percentuais nulos.
+- Censoring=True está contido em HIGH pela definição preservada. Ausências de células com
+  LOW/MEDIUM são estruturais, não perda de dados. Frequência de subprevisão não cresce com a
+  flag: 50,09% versus 50,23%; magnitude e dispersão aumentam, o que é uma afirmação diferente.
+- Os p75 de alta incerteza e o mínimo de 100 séries por célula são convenções descritivas,
+  não thresholds operacionais calibrados. Dependência entre séries/folds limita inferência
+  mesmo em células com milhares de observações. Não se executou teste de significância.
+- Participações são de venda observada normalizada, não receita, estoque físico ou lost sales.
+  Ruptura pode censurar vendas; erro em relação à venda observada não revela demanda latente.
+- Associações entre activity_rate e erro são fracas e sujeitas a composição. Não equivalem às
+  associações diárias da Fase 2, nem sustentam causalidade promocional ou mudança do modelo.
+- Exemplos são determinísticos, mas ilustrativos. LOW significa baixa exposição relativa;
+  o exemplo de menor MAE tem baixa escala e ainda apresenta dias de ruptura.
+- Os dois testes legados que abrem eval permanecem preservados e excluídos desta rodada.
+  Reprodução byte a byte vale para o runtime registrado; telemetria e notebook não entram
+  no contrato de igualdade dos 17 Parquet e do resumo. Nenhuma política operacional foi criada.

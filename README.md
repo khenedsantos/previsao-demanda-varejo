@@ -23,13 +23,19 @@ global, com exceções por segmento. Eval permanece congelado; reposição conti
 Fase 4 aprovada e commitada em `4dfaa9d`. A continuação autorizada da Fase 5 executa somente
 Holt-Winters A/N/A na população, agora concluída: 50.000 séries, quatro folds e 200.000 ajustes, com comparação
 pareada contra Seasonal Naive. A projeção inicial foi 39,03 minutos; o antigo limite de engenharia
-de 30 minutos foi revogado pelo usuário. Fase 5 permanece sem commit, para revisão.
+de 30 minutos foi revogado pelo usuário. Fase 5 aprovada e commitada em `6a7ccec`.
 Detalhes em [statistical_forecasting_report.md](docs/statistical_forecasting_report.md).
 
 Resultado observado: **A — ETS claramente superior neste backtest**, com ganho global de
 14,82% em MAE/WAPE e 13,32% em RMSE, nos quatro folds e em todos os segmentos predefinidos.
 Bias global melhora, mas sua dispersão por série aumenta. Zero fallback; população e comparação
 em 29,08 minutos. Essa evidência não equivale a adoção operacional nem validação no holdout.
+
+A Fase 6 acrescenta perfis de erro e risco usando as previsões congeladas, sem novo ajuste.
+São 16.529 séries com subprevisão persistente e 1.028 com duplo sinal de censura e persistência.
+Os perfis estão disponíveis após 25/06/2024 e não podem ser reutilizados retrospectivamente
+nos folds. Relatório: [forecast_uncertainty_and_risk_report.md](docs/forecast_uncertainty_and_risk_report.md).
+Entrega sem commit, para revisão; eval continua fechado.
 
 ## Arquitetura resumida
 
@@ -150,4 +156,37 @@ usa seis séries; nenhuma segunda execução dos 200.000 ajustes é exigida ante
 Validação final: **98 testes aprovados, dois legados desmarcados**, em 123,69 s; `pip check`
 e `git diff --check` aprovados. A reprodução dos seis ajustes usa uma thread numérica, como
 o runner, e exige igualdade exata. Notebook executado com dez figuras e nenhum erro.
-Recomendação técnica: Fase 5 aprovada para revisão, com as ressalvas do relatório e sem commit.
+Esse resultado foi revisado e aprovado; a Fase 5 está commitada em `6a7ccec`, com as ressalvas do relatório.
+
+## Reproduzir a Fase 6
+
+Após os outputs aprovados das fases 2, 3 e 5:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_forecast_risk_profile.py
+.\.venv\Scripts\python.exe scripts/render_forecast_uncertainty.py
+.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase6-final --deselect=tests/test_raw_quality.py::test_raw_files_manifest_hashes_and_schema --deselect=tests/test_raw_quality.py::test_staging_reproducible_from_full_raw
+.\.venv\Scripts\python.exe -m pip check
+git diff --check
+git status
+```
+
+O pipeline verifica hashes e escopo train dos marts existentes e agrega 1,4 milhão de erros;
+não lê raw nem ajusta modelos. Publica três marts em processed, 14 Parquet auxiliares e um
+resumo determinístico em outputs/forecast_uncertainty. A reprodução compara seus hashes em
+uma raiz sem raw/eval, com ajuste ETS bloqueado. Os dois testes legados acima permanecem
+preservados e desmarcados porque abririam eval.
+
+[05_forecast_uncertainty_and_risk.ipynb](notebooks/05_forecast_uncertainty_and_risk.ipynb)
+consome esses outputs e contém dez figuras. Bias negativo em pelo menos três dos quatro
+folds, junto de bias consolidado negativo, define persistência. O retrato operacional de
+25/06 serve ao diagnóstico posterior; a avaliação prospectiva da Fase 5 permanece intacta.
+Não há correção de forecast, demanda latente, lost sales ou fórmula de estoque.
+
+Validação final da Fase 6: **106 testes aprovados e dois legados desmarcados**, em 169,47 s.
+Os 17 Parquet e o resumo foram reproduzidos por hash, sem raw/eval ou ajuste ETS no pipeline
+da Fase 6. A suíte também preserva as reproduções legadas em temporários, incluindo seis
+ajustes ETS; nenhuma reexecução populacional ocorreu. Os hashes oficiais da Fase 5 continuam
+iguais. Notebook com dez figuras e nenhum erro; `pip check` e `git diff --check` aprovados.
+Recomendação técnica: Fase 6 aprovada para revisão descritiva, com sensibilidade do bias global
+ao fold 4 explicitada. Stage vazio; entrega sem commit e sem avanço de fase.

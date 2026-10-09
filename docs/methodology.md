@@ -451,3 +451,46 @@ Validação verifica cobertura, unicidade, fórmulas, hashes e seis ajustes repr
 reexecutar imediatamente a população. Dois testes legados que abrem eval são excluídos apenas
 da execução desta rodada, preservando seus arquivos e as validações anteriores.
 Relatório: [statistical_forecasting_report.md](statistical_forecasting_report.md).
+
+## Fase 6 — incerteza empírica e risco após o backtest
+
+O universo é o ETS aprovado: 50.000 séries, quatro folds disjuntos de sete dias, 28 erros por
+série e 1.400.000 previsões. Erro `e=forecast−actual`: negativo significa subprevisão da venda
+observada normalizada. Os forecasts e seus indicadores de fallback/clipping permanecem congelados.
+
+Para N observações e D=soma(actual): MAE=soma(abs(e))/N; RMSE=raiz(soma(e²)/N);
+WAPE=soma(abs(e))/D; bias=soma(e)/N; bias_pct=soma(e)/D. D=0 gera percentual nulo.
+`error_std` é o desvio amostral de e (ddof=1); `absolute_error_std`, de abs(e).
+Quantis usam interpolação linear tipo 7: assinados q10/q25/q50/q75/q90 e absolutos p50/p90/p95.
+Não há MAPE. Taxas de sub/sobreprevisão contam e<0/e>0 e dividem por N; e=0 fica separado.
+`underforecast_amount=max(actual−forecast,0)`; a soma usa todos os dias, e a média condicional
+usa somente valores positivos (nula se não houver). Essa quantidade não estima lost sales.
+
+`negative_bias_fold_count` conta folds com bias<0. A regra preferida foi mantida sem tuning:
+`persistent_underforecast_flag=(bias<0) AND (negative_bias_fold_count>=3)`.
+Os limiares alternativos 2 e 4 são apenas sensibilidades. A matriz cruza essa flag com a
+`censoring_risk_flag` da Fase 3, preservada exatamente: NEITHER, UNDERFORECAST_ONLY,
+CENSORING_ONLY e CENSORING_AND_UNDERFORECAST. Não se produz score composto.
+
+Calibração descreve global, ABC, XYZ, ABC×XYZ, exposição, flag e ABC×XYZ×exposição. O último
+recorte exige pelo menos 100 séries distintas por célula como heurística de suporte, sem alegar
+precisão estatística; todas as 27 células passam (mínimo 215 séries/6.020 erros). Os rótulos
+são os conhecidos em 25/06: são informação disponível após o backtest, não classificação
+prospectiva de folds anteriores. Por isso métricas segmentadas podem diferir das da Fase 5.
+
+Participação de venda usa dois denominadores explícitos: venda normalizada dos 90 dias de
+train e actual dos 28 dias de backtest. Não é receita. Para A/B com duplo sinal, a incerteza
+alta é diagnosticada separadamente por p75 global de desvio, RMSE, p90 e p95; esses cortes
+não redefinem a matriz nem originam política operacional. Spearman contínuo com activity_rate,
+global e por ABC, é complementar e não define faixas promocionais arbitrárias ou causalidade.
+
+Robustez mantém a população oficial intacta: mostra exclusão de cada fold, faixa central de
+98% dos erros assinados e exclusão diagnóstica de séries com D<=p05. Mede também retenção de
+bias negativo das séries persistentes ao retirar um fold; não reaplica a regra de três em quatro
+a apenas três folds. Extremos e baixa escala continuam presentes nos outputs oficiais.
+
+Exemplos: série A mais próxima do desvio mediano em cada célula; A com maior desvio;
+A com maior taxa de subprevisão; menor MAE entre LOW. Desempate sempre por loja/produto.
+São exemplos ilustrativos, não amostras representativas. A reprodução compara 17 Parquet e
+summary.json em raiz sem raw/eval, bloqueando ajustes ETS. Os dois testes legados que abrem
+eval permanecem intactos e desmarcados. Relatório: [forecast_uncertainty_and_risk_report.md](forecast_uncertainty_and_risk_report.md).

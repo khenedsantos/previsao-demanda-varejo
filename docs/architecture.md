@@ -144,3 +144,27 @@ O runner configura BLAS/OMP/MKL com uma thread antes dos imports. O teste de rep
 seis ajustes usa o mesmo limite via threadpoolctl já disponível na stack, pois pytest pode ter
 importado as bibliotecas antes. A comparação mantém igualdade exata dos arrays; não se aumenta
 tolerância para aceitar um runtime diferente. Threads também fazem parte da proveniência.
+
+## Contrato da Fase 6
+
+`scripts/build_forecast_risk_profile.py` chama `src/segmentation/demand_risk.py`.
+Os inputs são os marts estatístico, operacional e de perfil de demanda das fases 5, 3 e 2,
+verificados pelos respectivos resumos e manifesto train. Não existe leitura de raw ou ajuste
+ETS neste pipeline. `src/validation/forecast_uncertainty.py` concentra agregações e persistência.
+DuckDB usa uma thread, 768 MB e spill local de até 2 GB; pandas/PyArrow consomem memória adicional.
+
+Saídas principais: `mart_forecast_uncertainty` e `mart_demand_risk_profile` têm uma linha por
+loja/produto (50.000); `mart_error_calibration` tem 48 linhas por nível/dimensões aplicáveis.
+Filtrar `level` antes de agregar: dimensões não aplicáveis são nulas estruturais. Não há classes
+nulas no perfil de risco. Quatorze Parquet auxiliares registram série×fold, matriz, sensibilidades,
+distribuições, associações, exemplos e trajetórias. Todos são ordenados e publicados atomicamente.
+
+`summary.json` registra fonte, hashes dos inputs/outputs, thresholds e disponibilidade temporal.
+`performance.json`, `notebook_performance.json` e `validation.json` separam telemetria/validação
+da reprodução determinística. `src/reporting/demand_risk_report.py` gera o relatório;
+`demand_risk_plots.py` e `scripts/render_forecast_uncertainty.py` produzem dez figuras no notebook.
+Não existe lógica analítica exclusiva de célula. Os outputs e temporários continuam ignorados.
+
+O snapshot final da Fase 3 descreve classes conhecidas em 25/06, disponíveis para decisões a
+partir de 26/06. Ele não substitui os snapshots prospectivos da comparação da Fase 5. Nenhum
+forecast ou modelo anterior é modificado; o teste de reprodução bloqueia a função de ajuste ETS.

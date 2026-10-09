@@ -139,3 +139,22 @@ com piora ≥10% e bias mais distante de zero nos três primeiros folds. A regra
 conservadora melhora WAPE em 2,15%, mas fica atrás de ETS uniforme; não foi ajustada depois.
 Recomendação para revisão: A/N/A como candidato principal; SN permanece referência/fallback.
 Nenhuma decisão operacional ou abertura de eval decorre automaticamente dessa classificação.
+
+## Fase 6 — perfil de incerteza e risco, 2026-10-09
+
+| Decisão | Justificativa | Consequência |
+|---|---|---|
+| Reutilizar forecasts aprovados por hash | Preservar comparabilidade e evitar refit | Nenhuma execução populacional, benchmark ou novo modelo |
+| Usar retrato operacional conhecido em 25/06 | Produto da fase é um perfil disponível após os quatro folds | Proibida reutilização retrospectiva em folds; comparação prospectiva anterior intacta |
+| Manter bias consolidado negativo e ≥3 folds negativos | Regra preferida, interpretável e empiricamente examinada | 16.529 persistentes; alternativas 2/4 apenas diagnósticas |
+| Preservar a flag de censura da Fase 3 | Não confundir exposição, censura potencial e erro do modelo | Quatro células sem score ou demanda imputada |
+| Conservar desvio, RMSE e quantis separadamente | Dispersão, erro quadrático e cauda representam aspectos diferentes | Nenhuma escolha automática de fórmula de estoque |
+| Avaliar suporte do cruzamento fino com ≥100 séries | Evitar resumos em células muito pequenas | As 27 células passam; limiar não é garantia de precisão |
+| Manter extremos e baixa escala na população | Não melhorar métricas mediante exclusões | Trim e p05 usados apenas como sensibilidades claramente identificadas |
+| Explicitar dependência do bias global em relação ao fold 4 | Retirá-lo muda bias_pct de −2,17% para +0,98% | Sem alegar subprevisão global estável; 90,59% dos persistentes mantêm bias negativo |
+| Usar associação contínua com atividade como complemento | Correlações fracas e mistura de fatores entre séries | Sem faixas arbitrárias, uplift causal ou alteração da matriz |
+| Reproduzir apenas agregações da Fase 6 | Forecasts congelados e instrução de não repetir população | 17 Parquet e resumo comparados por hash; refit bloqueado no teste |
+
+A+B com duplo sinal somam 964 séries; 706 são A. Priorização significa investigar na próxima
+etapa que vier a ser autorizada, sem compra, ajuste de forecast, safety stock ou reposição.
+Entrega preservada sem commit. Eval fechado; nenhuma fase seguinte iniciada.
