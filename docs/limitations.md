@@ -182,3 +182,38 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
 - Os dois testes legados que abrem eval permanecem preservados e excluídos desta rodada.
   Reprodução byte a byte vale para o runtime registrado; telemetria e notebook não entram
   no contrato de igualdade dos 17 Parquet e do resumo. Nenhuma política operacional foi criada.
+
+## Fase 7 — limites do holdout final
+
+- São sete dias em uma única origem. Confirmação fora do backtest não garante estabilidade
+  em outras estações, mudanças de nível, lojas/produtos futuros ou políticas de reposição.
+- Eval foi aberto após o congelamento das fases 0–6. A partir disso, não pode orientar tuning
+  e depois ser reapresentado como teste intocado. Reproduzir a mesma avaliação não aumenta
+  a amostra nem cria nova evidência independente.
+- Actual é venda observada normalizada e pode ser censurada. Bias/subprevisão não identificam
+  demanda perdida, unidades físicas, receita ou estoque insuficiente. Não há estimativa de lost sales.
+- Perfis históricos podem antecipar diferenças de erro, mas grupos têm escalas e dependências
+  distintas. Spearman/quartis não provam causalidade ou calibração de intervalos preditivos.
+- Quartis vêm de 28 erros históricos por série; MAE/RMSE holdout vêm de sete. Caudas e sinal
+  do bias têm amostra curta. Não se recalibrou qualquer threshold usando a resposta do holdout.
+- Baixa escala histórica e denominador zero no holdout são diagnósticos diferentes. Percentuais
+  indefinidos ficam nulos; win rate direto e improvement relativo podem ter denominadores distintos.
+- Ruptura contemporânea é descrição posterior por observação. Uma série pode ter dias com e sem
+  ruptura; somar n_series dos dois grupos duplica entidades. Esses campos não são features futuras.
+- Não existia limite aprovado de aceitabilidade operacional de bias. Reportar seu valor não
+  permite declará-lo aceitável para estoque ou definir uma política. A classificação A/B/C/D
+  deve considerar toda a evidência sem inventar um threshold retrospectivo.
+- Previsões e regras permanecem congeladas. Reprodução por hash depende do runtime registrado;
+  tempos/memória/timestamps são separados. Os artefatos anteriores permanecem protegidos.
+
+- No holdout, menor erro ETS não equivale a melhor bias: −2,25% versus +0,28% do baseline.
+  A classe X tem bias_pct ETS −5,67%. Não há política operacional que torne esses valores
+  automaticamente aceitáveis, mesmo com ganhos de MAE/RMSE/WAPE em todos os segmentos.
+- A persistência histórica separa fracamente a ocorrência de bias negativo em sete dias:
+  56,12% versus 54,29%. O duplo sinal não produz a maior taxa de dias subprevistos; CENSORING_ONLY
+  tem bias_pct mais negativo. Não reinterpretar retrospectivamente as flags para forçar sucesso.
+- As 2.501 séries de baixa escala histórica têm WAPE ETS 55,83%, embora MAE seja 0,2176,
+  menor que 0,4359 nas demais. Há 61 séries com actual holdout zero; percentuais ficam nulos.
+- A associação de ruptura contemporânea combina maior frequência de subprevisão com bias
+  agregado positivo: frequência e magnitude podem divergir. Esse recorte posterior não pode
+  ser confundido com as flags históricas ou usado para modificar previsões já congeladas.

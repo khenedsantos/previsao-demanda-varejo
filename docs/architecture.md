@@ -168,3 +168,27 @@ Não existe lógica analítica exclusiva de célula. Os outputs e temporários c
 O snapshot final da Fase 3 descreve classes conhecidas em 25/06, disponíveis para decisões a
 partir de 26/06. Ele não substitui os snapshots prospectivos da comparação da Fase 5. Nenhum
 forecast ou modelo anterior é modificado; o teste de reprodução bloqueia a função de ajuste ETS.
+
+## Contrato da Fase 7
+
+`src/forecasting/holdout.py` verifica fontes/configuração, registra protocolo e gera previsões
+somente de train. Reutiliza `load_histories` e `forecast_batch`, incluindo a função ETS aprovada,
+em lotes de 2.500 séries. Cada histórico possui 90 datas até 25/06. Seasonal Naive copia os
+últimos sete valores. `frozen_predictions.parquet` contém 700.000 linhas sem actuals (dois modelos).
+O runner recusa sobrescrever execução ou parcial; não existe atualização intrahorizonte.
+
+`src/validation/holdout_evaluation.py` verifica os hashes antes da primeira leitura analítica
+de eval e registra sua autorização/timestamp. Valida schema, período, chaves e cobertura,
+só então une actuals. A interface tabular não ajusta modelos. Normaliza exclusivamente o tipo
+da chave de data na junção, preservando datas e valores. Os 53 artefatos anteriores e códigos
+congelados são verificados; nenhum output das fases 3–6 é sobrescrito.
+
+Marts novos: holdout_forecast (dt+IDs+modelo), holdout_series_evaluation (IDs+modelo) e
+holdout_model_comparison (level+dimensões aplicáveis+modelo). O último é longo, com pares e
+improvements em auxiliar separado. Dimensões não aplicáveis são nulos estruturais; filtrar level.
+O recorte a_double_signal é subconjunto adicional; não somar a outros níveis populacionais.
+
+O protocolo registra quartis históricos, fontes, configuração, hashes e runtime. Timestamps,
+custo e abertura ficam separados do resumo determinístico. Avaliação reproduz os 13 Parquet
+e resumo a partir de previsões salvas, sem train e com fitting bloqueado. O notebook consome
+outputs por `holdout_report.py`/`holdout_plots.py`; nenhuma lógica analítica exclusiva de célula.

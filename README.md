@@ -14,11 +14,12 @@ FreshRetailNet-50K, publicado por Dingdong-Inc no Hugging Face (versão 1.0, CC 
 
 ## Status
 
-Em desenvolvimento. Fases 0 a 4 aprovadas e commitadas: fundação, ingestão/qualidade, entendimento
-de train, segmentação operacional e baselines. A Fase 4 contém Naive, Seasonal Naive e
+Em desenvolvimento. Fases 0 a 6 aprovadas e commitadas: fundação, ingestão/qualidade, entendimento
+de train, segmentação, baselines, ETS e diagnóstico de incerteza/risco. A Fase 4 contém Naive, Seasonal Naive e
 quatro folds temporais com segmentação prospectiva. Resultados em
 [forecasting_baselines_report.md](docs/forecasting_baselines_report.md). Seasonal Naive é a referência
-global, com exceções por segmento. Eval permanece congelado; reposição continua fora do escopo.
+global de comparação, com exceções por segmento. A primeira abertura analítica de eval foi
+autorizada e realizada na Fase 7, após congelamento das decisões anteriores; reposição continua fora do escopo.
 
 Fase 4 aprovada e commitada em `4dfaa9d`. A continuação autorizada da Fase 5 executa somente
 Holt-Winters A/N/A na população, agora concluída: 50.000 séries, quatro folds e 200.000 ajustes, com comparação
@@ -35,7 +36,7 @@ A Fase 6 acrescenta perfis de erro e risco usando as previsões congeladas, sem 
 São 16.529 séries com subprevisão persistente e 1.028 com duplo sinal de censura e persistência.
 Os perfis estão disponíveis após 25/06/2024 e não podem ser reutilizados retrospectivamente
 nos folds. Relatório: [forecast_uncertainty_and_risk_report.md](docs/forecast_uncertainty_and_risk_report.md).
-Entrega sem commit, para revisão; eval continua fechado.
+Fase 6 aprovada estritamente como diagnóstico descritivo e commitada em `d6681aa`.
 
 ## Arquitetura resumida
 
@@ -190,3 +191,44 @@ ajustes ETS; nenhuma reexecução populacional ocorreu. Os hashes oficiais da Fa
 iguais. Notebook com dez figuras e nenhum erro; `pip check` e `git diff --check` aprovados.
 Recomendação técnica: Fase 6 aprovada para revisão descritiva, com sensibilidade do bias global
 ao fold 4 explicitada. Stage vazio; entrega sem commit e sem avanço de fase.
+
+## Fase 7 — avaliação final autorizada
+
+O usuário autorizou a primeira abertura analítica de eval somente após o congelamento e commit
+das fases 0–6. [Protocolo anterior à abertura](docs/final_holdout_protocol.md): ETS A/N/A e
+Seasonal Naive, 50.000 séries, origem 26/06/2024, sete passos diretos, treino encerrado em 25/06.
+Previsões dos dois modelos são persistidas sem actuals antes da leitura do holdout. Labels,
+flags, fallback, clipping e hiperparâmetros anteriores permanecem inalterados.
+
+```powershell
+# Única primeira execução autorizada; recusa execução final/parcial já existente:
+.\.venv\Scripts\python.exe scripts/run_final_holdout.py --fit-only
+# Reproduzir avaliação sem refit:
+.\.venv\Scripts\python.exe scripts/run_final_holdout.py --evaluate-only
+.\.venv\Scripts\python.exe scripts/render_final_holdout.py
+.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase7-final
+.\.venv\Scripts\python.exe -m pip check
+git diff --check
+git status
+```
+
+Resultados em [final_holdout_evaluation_report.md](docs/final_holdout_evaluation_report.md) e
+[06_final_holdout_evaluation.ipynb](notebooks/06_final_holdout_evaluation.ipynb), com dez figuras
+que leem outputs. A suíte completa pode agora executar os dois testes legados de ingestão/staging
+antes excluídos, pois a abertura do holdout foi autorizada. Não apagar as exclusões documentadas
+nas rodadas históricas. Os três marts holdout e seus auxiliares são ignorados pelo Git.
+Esta entrega não faz commit, tuning, reposição ou Power BI.
+
+Resultado final holdout: ETS WAPE **35,62%**, Seasonal Naive **41,83%**; ganho **14,85%** em
+MAE/WAPE e **14,90%** em RMSE. Os 50.000 ajustes terminaram sem fallback, em 7,10 minutos
+incluindo I/O. Bias_pct ETS **−2,25%**, contra **+0,28%** do baseline. Classificação conjunta
+**B — confirmação parcial**: forte confirmação da vantagem de erro do ETS, porém separação
+prospectiva fraca da persistência (56,12% versus 54,29% com bias negativo) e confirmação não
+uniforme da matriz de risco. Não se alterou nenhuma regra após observar esses resultados.
+
+Validação final: **118 testes aprovados, sem falhas ou exclusões**, em 203,21 s conforme XML.
+Os 13 Parquet e o resumo foram reproduzidos em raiz sem train, com fitting bloqueado; os 53
+artefatos anteriores e forecasts pré-eval continuam íntegros. Notebook com dez figuras e zero
+erros; `pip check` e `git diff --check` aprovados. A retomada confirmou os registros existentes
+sem repetir forecasting. Recomendação técnica: Fase 7 aprovada para revisão, com classificação B
+e ressalvas explícitas. Entrega sem commit; stage vazio; reposição e Power BI não iniciados.

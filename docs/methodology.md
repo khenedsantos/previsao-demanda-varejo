@@ -494,3 +494,34 @@ A com maior taxa de subprevisão; menor MAE entre LOW. Desempate sempre por loja
 São exemplos ilustrativos, não amostras representativas. A reprodução compara 17 Parquet e
 summary.json em raiz sem raw/eval, bloqueando ajustes ETS. Os dois testes legados que abrem
 eval permanecem intactos e desmarcados. Relatório: [forecast_uncertainty_and_risk_report.md](forecast_uncertainty_and_risk_report.md).
+
+## Fase 7 — teste final fora do backtest
+
+Primeira abertura analítica de eval autorizada após commit `d6681aa`. Protocolo prévio em
+[final_holdout_protocol.md](final_holdout_protocol.md). Train inteiro até 25/06 alimenta um
+único ajuste ETS A/N/A por série; horizonte direto 26/06–02/07. Seasonal Naive usa 19–25/06.
+Nenhum actual ou campo contemporâneo de eval entra no ajuste, features, labels ou atualização.
+Os forecasts matemáticos, clipping, fallback e motivos mantêm a implementação da Fase 5.
+
+Eval é validado contra hash/schema do manifesto, 350.000 linhas, 50.000 séries, sete datas,
+grão único e igualdade da população com train. MAE/RMSE/WAPE/bias/bias_pct preservam fórmulas;
+improvement=(SN−ETS)/SN somente para erros não assinados, nulo se referência zero. Sem MAPE.
+
+ABC/XYZ/exposição/censura e as flags da Fase 6 são conhecidas na origem. Assim, a associação
+das 16.529 persistentes, 1.028 de duplo sinal e 706 A de duplo sinal com erro holdout é agora
+prospectiva. Essas populações não mudam após abrir eval; quantifica-se também retenção de
+bias negativo em sete dias. Nenhuma associação revela automaticamente demanda perdida.
+
+Spearman entre desvio/RMSE/p90/p95 históricos e MAE/RMSE holdout usa peso igual por série.
+Quartis têm cortes calculados exclusivamente nas medidas históricas, empates juntos. Métricas
+por quartil agregam as observações originais. Baixa escala usa o p05 histórico congelado 10,13;
+zeros do denominador holdout são reportados sem imputação ou exclusão. Todos os sete exemplos
+da Fase 6 são reutilizados. Ruptura contemporânea (`stock_hour6_22_cnt>0`) só agrupa observações
+após forecast em análise separada; uma série pode aparecer nos dois grupos.
+
+Holdout é comparado ao agregado, média, mínimo/máximo, desvio amostral e fold 4 do backtest.
+Nenhuma faixa de quatro folds é tratada como intervalo de confiança. A classificação A/B/C/D
+é um julgamento documentado da evidência conjunta, sem threshold escolhido para produzir A.
+Não há limite previamente aprovado de bias operacional aceitável. Após abertura, não alterar
+metodologia para melhorar eval. Releituras reproduzem os mesmos resultados, sem nova seleção.
+Relatório: [final_holdout_evaluation_report.md](final_holdout_evaluation_report.md).

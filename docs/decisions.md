@@ -158,3 +158,40 @@ Nenhuma decisão operacional ou abertura de eval decorre automaticamente dessa c
 A+B com duplo sinal somam 964 séries; 706 são A. Priorização significa investigar na próxima
 etapa que vier a ser autorizada, sem compra, ajuste de forecast, safety stock ou reposição.
 Entrega preservada sem commit. Eval fechado; nenhuma fase seguinte iniciada.
+
+## Fase 7 — autorização final e protocolo, 2026-10-09
+
+As restrições anteriores de fechamento de eval registram o estado das fases 0–6. A autorização
+explícita posterior permite sua primeira abertura analítica exclusivamente nesta avaliação final.
+
+| Decisão | Justificativa | Consequência |
+|---|---|---|
+| Prever todo o horizonte antes de ler actuals | Fronteira auditável entre treino e avaliação | Hash do arquivo sem actuals anterior à abertura |
+| Reutilizar ETS e fallback congelados | Evitar reabrir competição/tuning | 50.000 ajustes em train completo; nenhuma outra especificação |
+| Usar labels finais de 25/06 | Agora são informação anterior à origem 26/06 | Avaliação prospectiva das flags da Fase 6 sem recalibração |
+| Fixar quartis históricos antes de eval | Evitar thresholds orientados pelo teste final | Spearman e quartis descritivos, sem score ou fórmula de estoque |
+| Reutilizar sete exemplos anteriores | Evitar escolha manual após observar holdout | Mesmas regras/IDs, independentemente do resultado |
+| Separar ruptura contemporânea | Informação ainda desconhecida na origem | Descrição posterior, sem efeito em forecast ou classificação |
+| Preservar todos os resultados desfavoráveis | Holdout avalia metodologia já escolhida | Sem retuning; classificação qualitativa justificada, sem limite retroativo |
+| Reproduzir análise a partir de forecasts persistidos | Evitar repetir a população por validação tabular | Teste sem train e com ajuste bloqueado |
+| Voltar à suíte completa após autorização | Os dois testes legados já podem verificar eval | Sem apagar/modificar testes ou reescrever o histórico de exclusões |
+
+Nenhum commit ou avanço para reposição/Power BI está autorizado nesta entrega.
+
+Resultado one-shot: **B — confirmação parcial da metodologia conjunta**. A vantagem de erro
+do ETS é forte: MAE/WAPE melhoram 14,85%, RMSE 14,90%, e todos os segmentos predefinidos
+melhoram nas três métricas. WAPE de 35,62% é consistente com os quatro folds. O baseline,
+porém, tem bias mais próximo de zero (+0,28% versus −2,25%). A classificação B não denota
+ganho pequeno; registra as ressalvas de bias e a confirmação apenas parcial das regras de risco.
+
+Entre persistentes, 9.276/16.529 (56,12%) mantêm bias negativo; entre não persistentes, 54,29%.
+Duplo sinal tem erros maiores e bias mais negativo que NEITHER, mas menor frequência de
+subprevisão (49,12% versus 51,49%). CENSORING_ONLY tem bias_pct −9,36%, mais negativo que
+o duplo sinal. Não se confirmou uma ordenação uniforme da matriz; suas regras foram preservadas.
+Incerteza histórica apresenta Spearman de 0,725–0,740 com erro holdout, sem interpretação causal.
+
+Antes da abertura, um teste sintético exigiu normalizar o tipo da chave dt na junção posterior
+(date do Parquet versus timestamp do DuckDB). O protocolo inicial e sua emenda técnica têm
+hashes/timestamps registrados; configurações, forecasts, métricas e thresholds não mudaram.
+Após abrir eval, foi ajustada somente a representação da data numa junção do teste t−7,
+sem alterar código analítico, expectativas numéricas ou tolerâncias.
