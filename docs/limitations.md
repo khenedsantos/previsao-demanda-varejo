@@ -107,3 +107,45 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
   serialização podem alterar bytes. Telemetria é variável e excluída dos hashes determinísticos.
 - Limite de 1 GB do DuckDB não é limite do processo inteiro: pandas/PyArrow e objetos Python
   também consomem memória. Pico medido depende do processo; testes e notebook têm custos próprios.
+
+## Fase 5 — benchmark e evidência populacional
+
+- Foram medidos apenas 135 históricos de séries, em quatro origens e duas especificações.
+  Cinco séries por estrato não cobrem integralmente a cauda de custo e falhas. Nenhum fallback
+  na amostra não implica ausência de falhas entre as 50.000 séries.
+- Projeção temporal é ponderada pelo tamanho dos estratos; margem de 25% é uma convenção
+  operacional, não intervalo de confiança. O custo tabular da Fase 4 aproxima overhead ainda
+  não medido no pipeline completo. Carga da máquina altera o tempo efetivo.
+- Pico de 528,20 MiB corresponde ao benchmark, não ao backtest populacional. Não se pressupõe
+  disponibilidade integral dos 7,78 GiB de RAM física ou speedup linear com paralelismo.
+- A pausa inicial por custo foi superada por autorização explícita de A/N/A completo. A margem
+  do benchmark não garante duração; tempos reais separam ajustes, I/O, comparação e notebook.
+  Uma falha de memória antes de qualquer ajuste exigiu leitura em lotes, sem mudança analítica.
+- Projeção não negativa afeta bias; frequência e magnitude populacionais ficam no relatório.
+  Valores originais são preservados. Não existe imputação ou correção de censura.
+- Os quatro folds avaliam somente 28 dias. Ganho populacional dentro de train não é validação
+  externa; não há teste de significância ou garantia de repetição em eval, que permanece fechado.
+- Um ganho médio pode coexistir com maior subprevisão ou perdas relevantes por série. Win rate,
+  melhoria ponderada global, distribuição de perdas e custo precisam ser considerados juntos.
+- ABC/XYZ mudam por origem. Win rate por série×classe usa subconjuntos de folds e permite que
+  uma série figure em mais de uma classe. Esses totais não somam necessariamente 50.000.
+- A análise híbrida tem somente dois folds após o período mínimo de observação. Não é política
+  operacional aprovada nem prova de vantagem fora da amostra; nenhuma regra foi afinada por resultado.
+- Casos D=0 e referência SN zero permanecem indefinidos para os percentuais correspondentes.
+  Pequenos denominadores geram caudas extremas. Exemplos são selecionados por extremos, sem
+  representatividade e sem influência na seleção de modelo.
+- Não foi repetida a população completa. Contratos, hashes e seis ajustes reproduzidos dão
+  evidência delimitada; outra execução integral dependerá da próxima decisão do usuário.
+- Dois testes legados de ingestão/staging abririam eval. Foram preservados e excluídos desta
+  rodada para respeitar o holdout fechado; isso deve acompanhar a contagem de testes executados.
+- Na execução populacional, o bias global melhora (−3,27% → −2,17%), mas o p05 do bias_pct
+  por série piora (−20,58% → −23,86%) e o p95 aumenta (18,00% → 29,43%). A magnitude do bias
+  piora nos folds 1, 2 e 3; no fold 4 persiste subprevisão de 10,45%. Menor erro médio não
+  garante calibração individual melhor. A flag=True ainda apresenta bias_pct de −7,68%.
+- WAPE melhora em todos os folds, mas seu desvio entre folds aumenta de 1,39 para 1,72 ponto
+  percentual. 5.797 séries perdem em MAE/WAPE e 4,256% pioram pelo menos 10%. A classificação
+  A é relativa à evidência conjunta deste backtest, sem alegar dominância universal.
+- Reprodução bit a bit dos ajustes também exige a configuração de threads do runner. A primeira
+  validação, com o runtime padrão do pytest, divergiu até 0,000124 em seis ajustes; usando uma
+  thread numérica os mesmos valores foram reproduzidos exatamente. O teste fixa esse contexto
+  com threadpoolctl (já presente na stack), sem relaxar tolerâncias ou modificar forecasts.

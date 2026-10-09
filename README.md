@@ -14,11 +14,22 @@ FreshRetailNet-50K, publicado por Dingdong-Inc no Hugging Face (versão 1.0, CC 
 
 ## Status
 
-Em desenvolvimento. Fases 0 a 3 aprovadas e commitadas: fundação, ingestão/qualidade, entendimento
-de train e segmentação operacional. Fase 4 implementada para revisão: Naive, Seasonal Naive e
+Em desenvolvimento. Fases 0 a 4 aprovadas e commitadas: fundação, ingestão/qualidade, entendimento
+de train, segmentação operacional e baselines. A Fase 4 contém Naive, Seasonal Naive e
 quatro folds temporais com segmentação prospectiva. Resultados em
 [forecasting_baselines_report.md](docs/forecasting_baselines_report.md). Seasonal Naive é a referência
-global, com exceções por segmento. Eval permanece congelado; modelos adicionais e reposição pendentes.
+global, com exceções por segmento. Eval permanece congelado; reposição continua fora do escopo.
+
+Fase 4 aprovada e commitada em `4dfaa9d`. A continuação autorizada da Fase 5 executa somente
+Holt-Winters A/N/A na população, agora concluída: 50.000 séries, quatro folds e 200.000 ajustes, com comparação
+pareada contra Seasonal Naive. A projeção inicial foi 39,03 minutos; o antigo limite de engenharia
+de 30 minutos foi revogado pelo usuário. Fase 5 permanece sem commit, para revisão.
+Detalhes em [statistical_forecasting_report.md](docs/statistical_forecasting_report.md).
+
+Resultado observado: **A — ETS claramente superior neste backtest**, com ganho global de
+14,82% em MAE/WAPE e 13,32% em RMSE, nos quatro folds e em todos os segmentos predefinidos.
+Bias global melhora, mas sua dispersão por série aumenta. Zero fallback; população e comparação
+em 29,08 minutos. Essa evidência não equivale a adoção operacional nem validação no holdout.
 
 ## Arquitetura resumida
 
@@ -108,3 +119,35 @@ São 2,8 milhões de previsões de venda observada normalizada, horizonte de set
 origens (29/05, 05/06, 12/06 e 19/06/2024). WAPE global: Naive 43,49%; Seasonal Naive 42,29%.
 Dados e figuras soltas são ignorados; código, testes, documentação e notebook são elegíveis para Git.
 Nenhum commit ou avanço de fase é executado automaticamente.
+
+## Reproduzir a comparação da Fase 5
+
+```powershell
+.\.venv\Scripts\python.exe scripts/run_statistical_forecast.py --compare-only
+.\.venv\Scripts\python.exe scripts/render_statistical_forecasting.py
+.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase5-population-final --deselect=tests/test_raw_quality.py::test_raw_files_manifest_hashes_and_schema --deselect=tests/test_raw_quality.py::test_staging_reproducible_from_full_raw
+.\.venv\Scripts\python.exe -m pip check
+```
+
+`--compare-only` reutiliza as previsões salvas sem repetir ajustes. Em uma primeira execução
+populacional autorizada, o comando sem essa opção produz os forecasts; ele recusa sobrescrever
+um resultado final ou parcial existente. A leitura ocorre em lotes de 2.500 históricos cortados
+na origem. Preserva fallback Seasonal Naive, razões, forecast original e clipping negativo.
+
+São gerados `mart_forecast_statistical.parquet`, `mart_model_comparison.parquet` e auxiliares em
+`data/outputs/statistical_forecasting/`. A comparação reutiliza snapshots prospectivos e forecasts
+da Fase 4, verificados por hash. O notebook [04_statistical_forecasting.ipynb](notebooks/04_statistical_forecasting.ipynb)
+consome somente esses outputs e produz dez figuras. MAE, RMSE, WAPE, bias, materialidade e
+potencial híbrido são documentados no relatório; não há MAPE nem política operacional final.
+
+O benchmark anterior, em 135 séries e 540 ajustes por configuração, é preservado sem reexecução.
+A/A/A não participa da execução populacional. A validação mantém os 92 testes anteriores e
+acrescenta contratos populacionais/comparação. Os dois testes legados indicados em `--deselect`
+abririam eval para verificar ingestão/staging: permanecem intactos, mas não são executados nesta
+rodada. Temporários locais evitam o problema anterior de I/O em AppData. Reprodução de ajustes
+usa seis séries; nenhuma segunda execução dos 200.000 ajustes é exigida antes da revisão.
+
+Validação final: **98 testes aprovados, dois legados desmarcados**, em 123,69 s; `pip check`
+e `git diff --check` aprovados. A reprodução dos seis ajustes usa uma thread numérica, como
+o runner, e exige igualdade exata. Notebook executado com dez figuras e nenhum erro.
+Recomendação técnica: Fase 5 aprovada para revisão, com as ressalvas do relatório e sem commit.

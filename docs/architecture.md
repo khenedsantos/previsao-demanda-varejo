@@ -21,8 +21,8 @@ Registrar a organização técnica e as responsabilidades de cada etapa.
 Fase 1 implementada e commitada: ingestão e qualidade. Fase 2 implementada: perfil descritivo
 de train, análise de disponibilidade e notebook de apresentação, aprovada e commitada.
 Fase 3 aprovada e commitada: ABC por produto, XYZ por série e exposição separada.
-Fase 4 implementada para revisão: dois baselines e quatro folds com segmentação prospectiva.
-Modelos adicionais e reposição pendentes.
+Fase 4 aprovada e commitada: dois baselines e quatro folds com segmentação prospectiva.
+Fase 5 iniciada até o benchmark de custo; execução estatística completa e reposição pendentes.
 
 ## Execução e contratos
 
@@ -102,3 +102,45 @@ O pico do processo também inclui pandas, PyArrow e Python, podendo exceder o li
 Não há loops Python por linha. `forecast_report.py` gera documentação; `forecast_plots.py` lê
 outputs; `scripts/render_forecasting_baselines.py` executa notebook de dez figuras na .venv.
 Não existe lógica analítica exclusiva de célula. Modelos adicionais e reposição seguem fora do escopo.
+
+## Contrato da Fase 5
+
+`src/forecasting/ets.py` encapsula Holt-Winters aditivo de período sete, convergência, projeção
+de previsões negativas em zero e fallback Seasonal Naive com razão explícita. Nenhum modelo
+treinado é persistido. `ets_benchmark.py` verifica a fonte train e todos os hashes da Fase 4,
+seleciona amostra por ABC×XYZ×escala do primeiro snapshot e lê históricos com corte na SQL.
+
+`scripts/benchmark_statistical_forecast.py` limita threads numéricas e executa 135 séries ×
+quatro folds × duas especificações sequencialmente. Publica amostra, custos/status por ajuste
+e JSON em outputs/statistical_forecasting, ignorados pelo Git. Tempos são variáveis; a seleção
+é determinística. Esse benchmark foi preservado; a continuação foi autorizada exclusivamente
+para A/N/A populacional, com o limite inicial de custo revogado.
+
+`scripts/run_statistical_forecast.py` orquestra `statistical_backtesting.py` e `model_comparison.py`.
+As opções `--fit-only` e `--compare-only` separam ajustes e comparação. O primeiro recusa um mart
+final/parcial existente, registra runtime/configuração, lê 2.500 séries por lote a partir das
+chaves dos snapshots prospectivos e escreve Parquet temporário. Ao validar 200.000 ajustes e
+1.400.000 forecasts, publica o arquivo final por renomeação. `progress.json` é atualizado
+atomicamente a cada lote. Nenhum ajuste recebe actual futuro; a união acontece depois.
+
+`forecast_metrics.py` aceita múltiplos marts e filtro de modelos, preservando fórmulas e o
+comportamento padrão da Fase 4. `model_comparison.py` agrega SN e ETS sobre as mesmas chaves
+e snapshots; valida cobertura/denominadores antes do pareamento. `mart_model_comparison`
+contém uma linha por par de métricas, ambos os valores e melhoria; `level` distingue série,
+série×fold, consolidados, segmentos×fold e série×classe prospectiva para win rate.
+
+Fallback e clipping permanecem no mart de forecasts. Auxiliares guardam diagnósticos, win rates,
+materialidade, estabilidade, escolhas híbridas baseadas no passado e exemplos determinísticos.
+O mart SN não é copiado. Fonte, benchmark e outputs ficam ligados por hashes no summary.json;
+telemetria variável é separada. DuckDB usa uma thread, 512 MB para históricos e 768 MB para
+comparação; esse limite não inclui objetos pandas/PyArrow. Spill da comparação fica em `.tmp/`.
+
+`statistical_report.py` gera as tabelas do relatório; `statistical_plots.py` lê apenas outputs;
+`render_statistical_forecasting.py` executa dez figuras na .venv. Nenhuma lógica crítica é
+exclusiva do notebook. Dados/outputs continuam ignorados; não há modelos serializados,
+abertura de eval ou integração com reposição/Power BI.
+
+O runner configura BLAS/OMP/MKL com uma thread antes dos imports. O teste de reprodução dos
+seis ajustes usa o mesmo limite via threadpoolctl já disponível na stack, pois pytest pode ter
+importado as bibliotecas antes. A comparação mantém igualdade exata dos arrays; não se aumenta
+tolerância para aceitar um runtime diferente. Threads também fazem parte da proveniência.

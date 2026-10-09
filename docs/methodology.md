@@ -404,3 +404,50 @@ separada; `scripts/render_forecasting_baselines.py` executa dez figuras no noteb
 de perfil aprovada. Testes validam métricas conhecidas, fontes temporais, t−7, grãos, somas,
 thresholds e invariância de forecasts/segmentos após mutar todo o futuro. A reprodução em raiz
 sem eval, staging ou marts compara os nove hashes e summary.json; tempo/memória ficam fora.
+
+## Fase 5 — benchmark e comparação populacional autorizada
+
+O desafio estatístico preserva target, quatro folds e horizonte da Fase 4. Primeiro foi
+executado o benchmark: 135 séries, cinco por ABC×XYZ×tercil da venda média histórica
+do primeiro corte. Os menores hashes de semente+IDs definem a seleção; não se consulta erro
+futuro ou segmentação final. A amostra permanece igual entre os quatro folds.
+
+Candidato principal pré-declarado: Holt-Winters aditivo semanal sem tendência (A/N/A).
+A/A/A é somente alternativa no benchmark de custo. Zero é compatível com a formulação; não
+há epsilon ou transformação da série. Estados e parâmetros são estimados no prefixo conhecido,
+com SLSQP, maxiter=200, ftol=1e-6, sem brute force ou remoção posterior de bias. Valores previstos
+negativos são projetados em zero, mantendo valor original e indicador para auditoria.
+
+Falha de ajuste, não convergência, saída não finita, histórico constante ou sazonal insuficiente
+levam a Seasonal Naive com motivo explícito. Dados históricos inválidos bloqueiam o cálculo.
+Não houve fallback na amostra; a taxa populacional é medida, sem inferi-la do benchmark.
+
+Projeção de custo ponderada pela população de cada estrato, somada sobre os quatro folds.
+Aplica-se margem operacional de 25% e custo tabular da Fase 4 como aproximação de overhead.
+O limite local inicial de 30 minutos foi anunciado antes de medir: o resultado foi 39,03 minutos
+para A/N/A e 54,52 para A/A/A. A execução foi inicialmente pausada. Em seguida o usuário autorizou
+somente A/N/A completo e revogou o limite. Nenhum novo tuning ou ajuste A/A/A foi feito.
+
+Na população, 50.000 séries × quatro folds × sete dias. Snapshots prospectivos da Fase 4
+são reutilizados por hash. A leitura em lotes limita memória sem mudar histórico ou modelo.
+Métricas usam exatamente as somas suficientes da Fase 4. Improvement=(SN−ETS)/SN para
+MAE/RMSE/WAPE; SN=0 gera nulo. Bias permanece assinado, sem improvement relativo.
+
+Win rate global compara cada série agregando os quatro folds. Por ABC/XYZ, cada série é agregada
+somente nos folds em que pertencia à classe prospectiva: contagens entre classes podem se
+sobrepor. Evita-se usar rótulo full-train ou último rótulo retrospectivamente. Empates usam
+atol=1e-12 e rtol=1e-10. Distribuição da melhoria por série inclui p25/mediana/p75, >0,
+≥1/5/10% e ≤−1/5/10%; limiares são descritivos, sem automatizar decisão operacional.
+
+Análise híbrida predefinida antes dos resultados populacionais: pelo menos dois folds anteriores
+por ABC×XYZ, todos com WAPE menor, sem piora de RMSE e sem piora de magnitude do bias agregado
+anterior. Se elegível, ETS; caso contrário SN. Os dois primeiros folds usam SN. Não se utiliza
+o próprio erro futuro ou seleção por série. A política operacional final não foi implementada.
+
+Exemplos usam o último fold: extremos de ganho/piora WAPE em AX, ganho AZ, redução/aumento
+de subprevisão e maior vantagem SN; desempate por IDs. Fallback, se houver, vem da origem
+mais recente com ocorrência. Denominadores ficam visíveis; extremos não são representativos.
+Validação verifica cobertura, unicidade, fórmulas, hashes e seis ajustes reproduzidos, sem
+reexecutar imediatamente a população. Dois testes legados que abrem eval são excluídos apenas
+da execução desta rodada, preservando seus arquivos e as validações anteriores.
+Relatório: [statistical_forecasting_report.md](statistical_forecasting_report.md).

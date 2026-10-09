@@ -96,3 +96,46 @@ não autoriza forecasting, backtesting ou reposição. Nenhum commit final é fe
 
 Resultados e tradeoffs em [forecasting_baselines_report.md](forecasting_baselines_report.md).
 A fase termina na recomendação de referência e validação, sem commit ou avanço automático.
+
+## Fase 5 — benchmark preliminar, 2026-10-08
+
+| Decisão | Justificativa | Consequência |
+|---|---|---|
+| Preservar integralmente o protocolo da Fase 4 | Comparabilidade e isolamento de eval | Mesmos quatro folds, horizonte e target |
+| A/N/A como candidato principal pré-declarado | Modelo semanal aditivo simples, compatível com zeros e janela curta | A/A/A apenas no benchmark; nenhuma seleção por erro futuro |
+| 135 séries em 27 estratos do primeiro snapshot | Cobrir ABC/XYZ e escalas sem olhar classes futuras | Seleção por hash; custo extrapolado com pesos populacionais |
+| SLSQP limitado e sem brute force | Ajuste determinístico com esforço controlado | Falhas/não convergência levam a Seasonal Naive auditável |
+| Preservar previsão original antes de max(0, forecast) | Formulação aditiva pode prever venda negativa | Projeção explícita, sem modificar o histórico |
+| Limite inicial local de 30 minutos, comunicado antes da medição | Controle de esforço neste ambiente; usuário pediu parada se custo excessivo | Projeção com margem de 39,03 minutos bloqueia execução completa |
+| Não classificar ETS em A/B/C/D nesta etapa | Ainda não há comparação de desempenho | Fase 5 parcial; custo não prova inferioridade preditiva |
+
+Nenhum modelo adicional foi avaliado, nenhum holdout aberto e nenhum commit feito nesta etapa.
+
+## Fase 5 — continuação populacional autorizada, 2026-10-08
+
+O quadro preliminar acima registra a decisão histórica. A autorização posterior substitui
+o bloqueio de custo: o limite de 30 minutos deixa de se aplicar.
+
+| Decisão | Justificativa | Consequência |
+|---|---|---|
+| Executar somente A/N/A completo | Autorização explícita após projeção de 39,03 minutos | 200.000 ajustes solicitados; nenhuma execução A/A/A ou tuning |
+| Carregar 2.500 históricos por lote | Agregação dos 50.000 excedeu 512 MB antes do primeiro ajuste | Preserva chaves, corte temporal, modelo e forecasts; correção de memória |
+| Reutilizar os snapshots/forecasts da Fase 4 por hash | Evitar vazamento e duplicação desnecessária | Mesmos actuals, denominadores e classes prospectivas |
+| Parear métricas antes de calcular improvement | Comparação exige cobertura equivalente | Falha explícita em chaves/denominadores divergentes; referência zero indefinida |
+| Win rate por série×classe prospectiva | Classes mudam entre origens | Agrega apenas folds pertencentes à classe; contagens podem se sobrepor |
+| Exibir ganhos e perdas em todos os segmentos predefinidos | Evitar seleção favorável após ver erros | Erro, bias, folds, materialidade e custo orientam classificação conjunta |
+| Híbrido apenas analítico e baseado em folds anteriores | Evitar escolher pelo próprio erro futuro | Mínimo dois folds, ganho WAPE consistente, nenhum RMSE pior e bias absoluto não pior |
+| Não repetir imediatamente a população | Autorização dispensa segunda execução antes da revisão | Contratos, hashes, referência SN e seis ajustes reproduzidos |
+| Preservar mas não executar dois testes legados que abrem eval | Instrução explícita de manter holdout fechado | Demais testes executados com basetemp local; exclusões documentadas |
+
+Não há commit, reposição, Power BI ou política operacional final nesta continuação.
+
+Classificação após os resultados: **A — ETS claramente superior no backtest observado**.
+MAE/WAPE melhoram 14,82%, RMSE 13,32%; vitória nas três métricas nos quatro folds e nos
+segmentos predefinidos. Bias global aproxima-se de zero; win rate MAE/WAPE de 88,406% e
+mediana de melhoria de 16,53% sustentam materialidade. Custo medido: 29,08 minutos para
+população/comparação, zero fallback. Ressalvas: caudas de bias mais largas, 4,256% das séries
+com piora ≥10% e bias mais distante de zero nos três primeiros folds. A regra híbrida
+conservadora melhora WAPE em 2,15%, mas fica atrás de ETS uniforme; não foi ajustada depois.
+Recomendação para revisão: A/N/A como candidato principal; SN permanece referência/fallback.
+Nenhuma decisão operacional ou abertura de eval decorre automaticamente dessa classificação.

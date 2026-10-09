@@ -39,20 +39,28 @@ def metrics_from_arrays(actual, forecast):
             "actual_sum":denominator,"n_forecasts":len(actual)}
 
 
-def create_metric_tables(connection, forecast_path, segments_path):
-    connection.execute("""
+def create_metric_tables(connection, forecast_path, segments_path, models=None, extra_levels=None):
+    """Mesmas fórmulas; aceita múltiplos marts sem duplicar forecasts em disco."""
+    multiple=isinstance(forecast_path,(list,tuple))
+    source=[str(path) for path in forecast_path] if multiple else str(forecast_path)
+    reader="read_parquet(?,union_by_name=true)" if multiple else "read_parquet(?)"
+    model_filter="WHERE f.model IN (SELECT unnest(?))" if models is not None else ""
+    parameters=[source,str(segments_path)]+([list(models)] if models is not None else [])
+    connection.execute(f"""
         CREATE TEMP TABLE atomic_metrics AS
         SELECT f.store_id,f.product_id,f.fold_id,f.forecast_origin,f.model,
                s.abc_class,s.xyz_class,s.stockout_exposure,s.censoring_risk_flag,
                count(*) AS n_forecasts,sum(f.actual) AS actual_sum,sum(f.forecast) AS forecast_sum,
                sum(abs(f.error)) AS absolute_error_sum,sum(f.error*f.error) AS squared_error_sum,
                sum(f.error) AS error_sum
-        FROM read_parquet(?) f JOIN read_parquet(?) s
+        FROM {reader} f JOIN read_parquet(?) s
           USING(store_id,product_id,fold_id,forecast_origin)
+        {model_filter}
         GROUP BY ALL
-    """,[str(forecast_path),str(segments_path)])
+    """,parameters)
     queries=[]
-    for level,dimensions in LEVELS.items():
+    levels={**LEVELS,**(extra_levels or {})}
+    for level,dimensions in levels.items():
         columns=[name if name in dimensions else f"NULL::{kind} AS {name}" for name,kind in DIMENSION_TYPES.items()]
         group_by=", ".join(["model",*dimensions])
         queries.append(f"""
