@@ -232,3 +232,36 @@ artefatos anteriores e forecasts pré-eval continuam íntegros. Notebook com dez
 erros; `pip check` e `git diff --check` aprovados. A retomada confirmou os registros existentes
 sem repetir forecasting. Recomendação técnica: Fase 7 aprovada para revisão, com classificação B
 e ressalvas explícitas. Entrega sem commit; stage vazio; reposição e Power BI não iniciados.
+
+## Fase 8 — simulação de política de reposição
+
+Forecasting congelado em `3c52827`: esta fase não ajusta modelos nem abre actuals de eval.
+Usa erros dos quatro backtests de train e previsões finais salvas antes da abertura do holdout.
+[Protocolo anterior à avaliação](docs/replenishment_simulation_protocol.md),
+[relatório](docs/replenishment_simulation_report.md) e
+[notebook com dez figuras](notebooks/07_replenishment_simulation.ipynb).
+
+LEAN (L1/q90), BASE (L2/q95) e PROTECTED (L3/q98) são hipóteses. `service_level` é o alias
+legado de cobertura alvo da venda observada normalizada; não é fill rate ou serviço real.
+Safety stock e reorder point são limiares simulados, sem quantidade de compra, estoque
+inventado, custos ou Power BI. Flags são overlays, sem multiplicadores.
+
+```powershell
+.\.venv\Scripts\python.exe scripts/build_replenishment_simulation.py
+.\.venv\Scripts\python.exe scripts/render_replenishment_simulation.py
+.\.venv\Scripts\python.exe -m pytest tests/test_replenishment_simulation.py tests/test_environment.py --basetemp=.tmp/pytest-phase8-final
+.\.venv\Scripts\python.exe -m pip check
+git diff --check
+git status
+```
+
+Nesta fase, não executar a suíte legada completa: alguns testes refazem ETS ou abrem
+raw/actuals de holdout. A validação da Fase 7 de 118 testes e exclusões históricas anteriores
+continuam documentadas; não são substituídas por uma alegação de execução completa na Fase 8.
+A nova suíte verifica reprodução integral sem eval e com eval artificialmente corrompido.
+
+A validação folds 1–3 → fold4 mostrou cobertura empírica de **79,648% / 84,084% / 88,322%**,
+abaixo dos três alvos. Não houve ajuste posterior para aproximá-los. A entrega é uma
+simulação descritiva auditável, não política operacional validada. Marts novos ignorados:
+`mart_replenishment_simulation` (150 mil linhas), `mart_replenishment_calibration` e
+`mart_replenishment_summary`. Sem commit e sem avanço para Power BI.

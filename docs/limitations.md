@@ -217,3 +217,22 @@ Consulte [data_quality_report.md](data_quality_report.md), [data_dictionary.md](
 - A associação de ruptura contemporânea combina maior frequência de subprevisão com bias
   agregado positivo: frequência e magnitude podem divergir. Esse recorte posterior não pode
   ser confundido com as flags históricas ou usado para modificar previsões já congeladas.
+
+## Fase 8 — limites da simulação de reposição
+
+Os targets de cobertura não foram atingidos no fold4: gaps de −10,352, −10,916 e −9,678 p.p.
+para LEAN, BASE e PROTECTED. A referência Normal também ficou abaixo dos alvos. Não há ajuste
+posterior para mascarar essa falha de transporte temporal; o snapshot final não tem cobertura
+futura comprovada. Aprovação descritiva não equivale à aprovação de uma política real.
+
+Só três folds para calibração temporal e quatro para o snapshot; caudas dependem de pooling.
+Observações série×fold e séries podem ser correlacionadas. Mínimo de 20 na cauda é suporte,
+não tamanho efetivo nem intervalo de confiança. Escalas são estimadas; classes migram;
+dependência é diagnóstico agrupado. Vendas observadas podem ser censuradas; nenhum buffer
+recupera demanda latente ou lost sales. Flags não recebem multiplicador.
+
+Não há inventário confiável, posição atual, pedidos, custos nem lead time de fornecedor.
+SS/ROP são limiares hipotéticos na escala normalizada, sem quantidade de compra ou ótimo
+econômico. Equivalência em dias não garante dias reais. Ratios em pequena escala exigem
+cuidado; denominador zero permanece nulo. L e q variam simultaneamente, sem efeito isolado
+identificável; PROTECTED não é automaticamente melhor. Não foi iniciado Power BI.

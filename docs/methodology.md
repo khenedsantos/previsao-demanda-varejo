@@ -525,3 +525,25 @@ Nenhuma faixa de quatro folds é tratada como intervalo de confiança. A classif
 Não há limite previamente aprovado de bias operacional aceitável. Após abertura, não alterar
 metodologia para melhorar eval. Releituras reproduzem os mesmos resultados, sem nova seleção.
 Relatório: [final_holdout_evaluation_report.md](final_holdout_evaluation_report.md).
+
+## Fase 8 — calibração temporal de limiares simulados
+
+Método pré-declarado em `replenishment_simulation_protocol.md`: LEAN L1/q90, BASE L2/q95,
+PROTECTED L3/q98. Erro acumulado é Σforecast−Σactual dos primeiros L dias de cada fold;
+shortfall=max(−erro acumulado,0). Calibração folds 1–3 com std ddof=1 dos seus 21 erros;
+quantil linear de shortfall/(std×sqrt(L)). Suporte mínimo ceil(20/(1−q)) calculado em decimal:
+200/400/1000. Hierarquia ABC×XYZ×exposure → ABC×XYZ → XYZ → GLOBAL, sem seleção por desempenho.
+
+SS=multiplicador×std×sqrt(L), ROP=forecast acumulado+SS. Referência Normal fixa, apenas benchmark.
+Diagnóstico de dependência usa resíduos centrados/padronizados e pares dentro de cada fold;
+razão Var(Σerro)/ΣVar(erro) documenta desvios da referência de independência. sqrt(L) não implica
+normalidade ou independência. Flags não alteram fórmula. Bias não é corrigido no point forecast.
+
+Fold4 valida a regra congelada, com rótulos de 18/06. Coberturas ficaram aquém dos alvos;
+não retunar após observá-las. Depois, mesma regra com quatro folds/std da Fase 6 para snapshot
+25/06 disponível em 26/06. Observações de calibração mantêm os rótulos prospectivos de cada
+fold; não usar classes full-train retroativamente. Previsões finais pré-eval não têm actuals.
+
+Ratios individuais só com forecast positivo; ratio agregado é ΣSS/Σforecast. Equivalência em
+dias usa ROP/(forecast7/7), sem garantia real. Cenários variam L e q juntos, impossibilitando
+atribuição isolada do efeito. Todas as quantidades estão na escala de venda normalizada.

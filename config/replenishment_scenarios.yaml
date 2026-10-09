@@ -4,7 +4,10 @@ description: >-
   não são fornecidos pela fonte. Os valores abaixo são hipóteses de planejamento,
   não observações, garantias de serviço ou recomendações calibradas.
 
-# A definição operacional de service_level será documentada antes da implementação.
+# Alias legado: service_level = target_coverage_level nos outputs da Fase 8.
+# Quantil alvo do erro histórico contra venda observada normalizada; não é
+# fill rate, OTIF, ausência garantida de ruptura nem cobertura de demanda latente.
+# Os três pares L/q são hipóteses fixas; flags de risco não multiplicam o buffer.
 scenarios:
   lean:
     lead_time_days: 1

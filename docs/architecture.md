@@ -192,3 +192,23 @@ O protocolo registra quartis históricos, fontes, configuração, hashes e runti
 custo e abertura ficam separados do resumo determinístico. Avaliação reproduz os 13 Parquet
 e resumo a partir de previsões salvas, sem train e com fitting bloqueado. O notebook consome
 outputs por `holdout_report.py`/`holdout_plots.py`; nenhuma lógica analítica exclusiva de célula.
+
+## Contrato da Fase 8
+
+`src/validation/replenishment.py` contém as fórmulas puras de soma de lead time, std amostral,
+shortfall, quantil linear, suporte de cauda, hierarquia, aplicação e agregação. Não acessa
+arquivos nem modelos. `src/replenishment/simulation.py` permite apenas seis inputs congelados:
+backtest ETS, segmentos prospectivos, incerteza, perfil de risco, exemplos e predictions
+pré-eval sem actuals. Verifica hashes, grãos, datas e valores; uma barreira impede fitting ETS.
+Escalas inválidas ou suporte global insuficiente bloqueiam, sem imputação ou exclusão.
+
+A escala de validação usa 21 erros dos folds 1–3. Persistência da calibração antecede a
+avaliação do fold4. A calibração final repete a regra com quatro folds e std da Fase 6.
+Rótulos das observações de calibração são prospectivos por fold; aplicação final usa 25/06.
+Nenhum mart de holdout avaliado nem raw faz parte da interface.
+
+Marts: simulation = IDs + scenario; calibration = stage + scenario + nível + chave da célula;
+summary = stage + scenario + level + cell. Filtrar stage/level antes de somar. Recortes de
+risco/A+duplo sinal se sobrepõem. Cobertura final realizada é nula; a referência fold4 tem
+proveniência explícita. Outputs auxiliares e telemetry ficam em `data/outputs/replenishment_simulation`.
+Relatório e figuras em módulos próprios; notebook consome somente outputs. Sem Power BI.

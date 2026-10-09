@@ -195,3 +195,19 @@ Antes da abertura, um teste sintético exigiu normalizar o tipo da chave dt na j
 hashes/timestamps registrados; configurações, forecasts, métricas e thresholds não mudaram.
 Após abrir eval, foi ajustada somente a representação da data numa junção do teste t−7,
 sem alterar código analítico, expectativas numéricas ou tolerâncias.
+
+## Fase 8 — decisões congeladas da simulação
+
+- Forecasting encerrado em `3c52827`: zero fitting, tuning ou alteração de artefatos anteriores.
+- Reusar predictions pré-eval sem actuals; calibrar apenas com erros históricos de train.
+- Protocolo escrito antes da cobertura fold4; validação 1–3 → 4, sem escala contendo fold4.
+- Manter os três cenários e alias legado service_level; outputs usam target_coverage_level.
+- Empírico é método oficial pré-declarado; Normal é referência, não seleção por holdout.
+- Rótulos prospectivos, mínimo de cauda 20, hierarquia objetiva, escala inválida bloqueia.
+- Censura, persistência e risk_cell só como contexto. A+duplo sinal é investigação, não compra.
+- Não esconder subcobertura: 79,648%, 84,084%, 88,322% no fold4 versus 90%, 95%, 98%.
+- Recalibrar a mesma fórmula com quatro folds para o snapshot histórico final; não chamar
+  isso de garantia de cobertura prospectiva. Não criar score, pedido ou custo fictício.
+- Reusar sete exemplos; tabela top10 A por SS e desempate IDs é descritiva e determinística.
+- Testar apenas caminhos sem fitting/raw; preservar evidência histórica de testes anteriores.
+- Fase 8 é simulação para revisão. Sem commit, sem Power BI e sem política real aprovada.
