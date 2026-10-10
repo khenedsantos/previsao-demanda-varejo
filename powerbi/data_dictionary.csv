@@ -1,0 +1,58 @@
+﻿table,column,data_type,business_definition,aggregation_behavior,notes
+DimSeries,series_key,integer,Chave determinística da série na população congelada de 50.000 pares.,KEY,"1 a 50.000, ordenando store_id e product_id; não depende da ordem de leitura."
+DimSeries,store_id,integer,Identificador anonimizado da loja.,KEY,Não representa quantidade; compõe a chave natural.
+DimSeries,product_id,integer,Identificador anonimizado do produto.,KEY,Não representa quantidade; compõe a chave natural.
+DimSeries,abc_class,text,Classe ABC congelada em 25/06/2024.,CATEGORY,"Relevância de venda observada normalizada, não receita; snapshot final."
+DimSeries,xyz_class,text,Classe XYZ congelada em 25/06/2024.,CATEGORY,"Regra anterior preservada, sem reclassificação."
+DimSeries,stockout_exposure,text,"Exposição histórica à ruptura: LOW, MEDIUM ou HIGH.",CATEGORY,"Contexto histórico, não estoque atual."
+DimSeries,censoring_risk_flag,boolean,Sinal histórico de risco de censura da venda observada.,BOOLEAN,Não estima demanda latente nem multiplica buffer.
+DimSeries,persistent_underforecast_flag,boolean,Sinal histórico congelado de subprevisão persistente.,BOOLEAN,Não é garantia de subprevisão futura nem multiplicador de buffer.
+DimSeries,demand_observation_risk_cell,text,Combinação dos sinais de censura e subprevisão.,CATEGORY,Overlay descritivo; não autoriza compra automática.
+DimDate,date,date,Data do horizonte final avaliado.,KEY,ISO YYYY-MM-DD; somente 26/06/2024 a 02/07/2024.
+DimDate,year,integer,Ano civil da data.,DO_NOT_SUM,Atributo de calendário.
+DimDate,month_number,integer,"Mês civil, de 1 a 12.",DO_NOT_SUM,Ordena month_name.
+DimDate,month_name,text,Nome do mês em português.,CATEGORY,Ordenar por month_number.
+DimDate,year_month,text,Ano e mês no formato YYYY-MM.,CATEGORY,Ordem lexical equivale à cronológica.
+DimDate,day,integer,"Dia do mês, de 1 a 31.",DO_NOT_SUM,Atributo de calendário.
+DimDate,day_of_week_number,integer,Dia da semana: segunda=1 até domingo=7.,DO_NOT_SUM,Ordena day_of_week_name.
+DimDate,day_of_week_name,text,Nome do dia da semana em português.,CATEGORY,Ordenar por day_of_week_number.
+DimDate,is_weekend,boolean,Indicador de sábado ou domingo.,BOOLEAN,Não é indicador de feriado; nenhum feriado foi inferido.
+DimDate,date_sort,integer,Data como inteiro YYYYMMDD para ordenação.,DO_NOT_SUM,"Chave de ordenação, não medida."
+DimScenario,scenario,text,"Cenário hipotético LEAN, BASE ou PROTECTED.",KEY,Ordenar por scenario_order.
+DimScenario,scenario_order,integer,"Ordem de apresentação: 1 LEAN, 2 BASE, 3 PROTECTED.",DO_NOT_SUM,Não indica superioridade ou recomendação.
+DimScenario,lead_time_days,integer,"Lead time hipotético: 1, 2 ou 3 dias.",DO_NOT_SUM,Não é prazo observado de fornecedor.
+DimScenario,target_coverage_level,decimal,Cobertura alvo hipotética da distribuição histórica do erro.,DO_NOT_SUM,"Fração 0–1; não é fill rate, OTIF ou service level real."
+DimScenario,scenario_description,text,Descrição explícita de lead time e target hipotéticos.,CATEGORY,Nenhum cenário é automaticamente melhor.
+FactForecast,date,date,Data prevista e avaliada no holdout final.,KEY,FK DimDate; compõe PK com série e modelo.
+FactForecast,series_key,integer,Série loja-produto avaliada.,KEY,FK DimSeries.
+FactForecast,model,text,Nome amigável: ETS ou Seasonal Naive.,CATEGORY,Selecionar exatamente um modelo ao somar actual; actual aparece nos dois modelos.
+FactForecast,model_code,text,Código congelado do modelo solicitado: ets_ana ou seasonal_naive.,CATEGORY,Mapeamento 1:1 com model; fallback_flag mantém indicação do fallback original.
+FactForecast,actual,decimal,"Venda observada normalizada do holdout, copiada do mart.",SUM,Aditiva em datas/séries para UM modelo; duplicada entre modelos. Não é receita/unidade física.
+FactForecast,forecast,decimal,Previsão final congelada após clipping/fallback originais.,SUM,Somar dentro de um modelo; não recomputar nem somar modelos alternativos.
+FactForecast,forecast_unclipped,decimal,Previsão original antes do clipping a zero.,SUM,Diagnóstico por modelo; pode ser negativa. Não substituir o forecast oficial.
+FactForecast,error,decimal,Erro assinado congelado: forecast menos actual.,SUM,Soma é numerador do bias_pct; bias é média. Negativo indica subprevisão.
+FactForecast,absolute_error,decimal,Erro absoluto congelado.,SUM,"MAE=média; WAPE=soma dividida por soma(actual), com um modelo selecionado."
+FactForecast,squared_error,decimal,Erro quadrático congelado.,SUM,RMSE=raiz da média; não tirar média de RMSEs agregados.
+FactForecast,fallback_flag,boolean,Fallback registrado na previsão original.,BOOLEAN,Repete-se nos sete dias da série/modelo; contagem de linhas não é número de ajustes.
+FactForecast,negative_clipped,boolean,Previsão diária negativa projetada para zero.,BOOLEAN,Flag por previsão diária; não somar como quantidade de venda.
+FactReplenishment,series_key,integer,Série loja-produto do snapshot simulado.,KEY,FK DimSeries; compõe PK com scenario.
+FactReplenishment,scenario,text,Cenário hipotético aplicado à série.,KEY,"FK DimScenario; cenários são alternativas, não parcelas aditivas."
+FactReplenishment,lead_time_days,integer,Lead time hipotético congelado do cenário.,DO_NOT_SUM,Redundância controlada: idêntico à DimScenario; preferir a dimensão para filtros.
+FactReplenishment,target_coverage_level,decimal,Cobertura alvo hipotética do cenário.,DO_NOT_SUM,Idêntico à DimScenario; não confundir com cobertura observada.
+FactReplenishment,lead_time_forecast,decimal,Soma das previsões ETS congeladas dos primeiros L dias.,SUM,Aditiva entre séries dentro de UM cenário/snapshot; escala normalizada.
+FactReplenishment,historical_error_std,decimal,"Desvio-padrão histórico por série, congelado na Fase 6.",DO_NOT_SUM,"Dispersão com ddof=1; não é aditiva, nem desvio-padrão de um agregado."
+FactReplenishment,empirical_multiplier,decimal,Multiplicador empírico final da Fase 8.,DO_NOT_SUM,Não recalibrar em BI; média descritiva não é multiplicador de uma população.
+FactReplenishment,safety_stock,decimal,Buffer simulado de proteção na escala normalizada.,SUM,Somar séries somente dentro de um cenário/snapshot. Não é estoque físico nem quantidade a comprar.
+FactReplenishment,reorder_point,decimal,Limiar simulado: lead_time_forecast mais safety_stock.,SUM,Sem estoque atual ou pedidos; não somar cenários/snapshots alternativos.
+FactReplenishment,buffer_to_forecast_ratio,decimal,Ratio individual safety_stock/lead_time_forecast.,DO_NOT_SUM,"Nullable se denominador zero; ratio agregado usa soma(SS)/soma(forecast), não média dos ratios."
+FactReplenishment,equivalent_coverage_days,decimal,ROP dividido pela média prevista dos sete dias.,DO_NOT_SUM,"Nullable se média zero; equivalência descritiva, não dias reais garantidos."
+FactReplenishment,calibration_level_used,text,Nível da hierarquia de calibração efetivamente utilizado.,CATEGORY,Regra congelada por suporte; não escolher pela performance no BI.
+FactReplenishment,calibration_n,integer,Número de janelas série×fold no pool de calibração.,DO_NOT_SUM,Repetido nas séries da célula; não somar nem interpretar como amostra independente.
+FactReplenishment,as_of,date,Corte histórico do snapshot: 25/06/2024.,DO_NOT_SUM,Sem relacionamento com DimDate nesta camada.
+FactReplenishment,available_from,date,Disponibilidade do snapshot: 26/06/2024.,DO_NOT_SUM,Não é data de compra ou entrega; sem relacionamento com DimDate.
+FactScenarioValidation,scenario,text,Cenário da validação temporal congelada.,KEY,"PK atual e FK DimScenario; é fato de resultado, não dimensão."
+FactScenarioValidation,target_coverage_level,decimal,Cobertura alvo hipotética avaliada.,DO_NOT_SUM,Idêntica à DimScenario; não é cobertura atingida.
+FactScenarioValidation,observed_coverage_rate,decimal,Cobertura global no fold4 com calibração dos folds 1–3.,DO_NOT_SUM,"Fração 0–1; não responde a filtros de série, classe ou data neste modelo."
+FactScenarioValidation,coverage_gap,decimal,Cobertura observada menos alvo.,DO_NOT_SUM,Fração assinada; multiplicar por 100 somente para exibir pontos percentuais.
+FactScenarioValidation,normal_reference_coverage,decimal,Cobertura global da referência Normal no fold4.,DO_NOT_SUM,"Benchmark congelado, sem seleção automática de fórmula."
+FactScenarioValidation,validation_stage,text,Etapa histórica do resultado: validation_fold4.,CATEGORY,Não representa cobertura realizada do snapshot final de 26/06.

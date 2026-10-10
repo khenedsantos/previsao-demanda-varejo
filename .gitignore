@@ -49,3 +49,9 @@ Thumbs.db
 # Estado local do Power BI; definições e documentação permanecem versionadas
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+
+# Camada BI reproduzível; dicionário e contrato permanecem versionados
+/powerbi/data/*
+!/powerbi/data/.gitkeep
+/powerbi/data_manifest.json
+/powerbi/build_performance.json
