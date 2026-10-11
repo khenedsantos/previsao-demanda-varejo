@@ -1,267 +1,218 @@
-# Previsão de demanda e planejamento de reposição no varejo
+# Previsão de Demanda no Varejo
 
-## Problema de negócio
+Forecasting, risco operacional e simulação de reposição a partir de dados reais de varejo.
 
-Como usar o histórico de vendas para prever demanda, identificar risco operacional e apoiar decisões de reposição no varejo?
+> Como identificar quando a venda observada subestima a demanda, prever a demanda de curto prazo e transformar essa previsão em sinais de risco e decisões de reposição no varejo?
 
-## Objetivo
+O projeto conecta qualidade de dados, previsão temporal, validação fora da amostra,
+diagnóstico de risco e simulação de reposição a um relatório Power BI voltado à decisão.
+Identifica **sinais de possível censura da venda**, sem tratar demanda latente ou vendas
+perdidas como quantidades conhecidas. O alvo previsto é a venda observada normalizada.
 
-Apoiar decisões de negócio com previsões de curto prazo, avaliação temporal e comunicação de incerteza, conectando demanda e planejamento de reposição.
+## Em 30 segundos
 
-## Dataset escolhido
+- **Previsão:** no holdout final, o ETS reduziu o WAPE de **41,83% para 35,62%**, melhoria relativa de **14,85%** frente ao Seasonal Naive.
+- **Investigação:** **1.028 séries** apresentam duplo sinal histórico de censura potencial e subprevisão persistente; **706** pertencem à Classe A.
+- **Reposição:** aumentar proteção elevou buffer e limiar simulados, mas **nenhum cenário atingiu seu target hipotético no fold 4**.
+- **Decisão:** usar ETS como referência inicial, investigar séries relevantes e expostas e validar estoque, lead time e custos reais antes de automatizar pedidos.
 
-FreshRetailNet-50K, publicado por Dingdong-Inc no Hugging Face (versão 1.0, CC BY 4.0). Arquivos Parquet oficiais congelados por revisão e SHA-256 em [source_manifest.yaml](config/source_manifest.yaml).
+Desenvolvimento analítico e páginas Power BI concluídos e aprovados. Dados e artefatos
+locais ficam fora do Git. As quatro capturas finais estão na seção Power BI abaixo.
 
-## Status
+## Em 3 minutos
 
-Em desenvolvimento. Fases 0 a 6 aprovadas e commitadas: fundação, ingestão/qualidade, entendimento
-de train, segmentação, baselines, ETS e diagnóstico de incerteza/risco. A Fase 4 contém Naive, Seasonal Naive e
-quatro folds temporais com segmentação prospectiva. Resultados em
-[forecasting_baselines_report.md](docs/forecasting_baselines_report.md). Seasonal Naive é a referência
-global de comparação, com exceções por segmento. A primeira abertura analítica de eval foi
-autorizada e realizada na Fase 7, após congelamento das decisões anteriores; reposição continua fora do escopo.
+### Dados e fronteira temporal
 
-Fase 4 aprovada e commitada em `4dfaa9d`. A continuação autorizada da Fase 5 executa somente
-Holt-Winters A/N/A na população, agora concluída: 50.000 séries, quatro folds e 200.000 ajustes, com comparação
-pareada contra Seasonal Naive. A projeção inicial foi 39,03 minutos; o antigo limite de engenharia
-de 30 minutos foi revogado pelo usuário. Fase 5 aprovada e commitada em `6a7ccec`.
-Detalhes em [statistical_forecasting_report.md](docs/statistical_forecasting_report.md).
+[FreshRetailNet-50K](https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K),
+publicado por Dingdong-Inc no Hugging Face sob **CC BY 4.0**:
+**50.000 séries loja–produto, 898 lojas, 865 produtos e 18 cidades**.
 
-Resultado observado: **A — ETS claramente superior neste backtest**, com ganho global de
-14,82% em MAE/WAPE e 13,32% em RMSE, nos quatro folds e em todos os segmentos predefinidos.
-Bias global melhora, mas sua dispersão por série aumenta. Zero fallback; população e comparação
-em 29,08 minutos. Essa evidência não equivale a adoção operacional nem validação no holdout.
+| Recorte | Período | Papel |
+|---|---|---|
+| Train | 28/03/2024–25/06/2024 | 90 dias para análise, segmentação e quatro folds temporais |
+| Holdout final | 26/06/2024–02/07/2024 | Uma semana avaliada após congelar as decisões |
 
-A Fase 6 acrescenta perfis de erro e risco usando as previsões congeladas, sem novo ajuste.
-São 16.529 séries com subprevisão persistente e 1.028 com duplo sinal de censura e persistência.
-Os perfis estão disponíveis após 25/06/2024 e não podem ser reutilizados retrospectivamente
-nos folds. Relatório: [forecast_uncertainty_and_risk_report.md](docs/forecast_uncertainty_and_risk_report.md).
-Fase 6 aprovada estritamente como diagnóstico descritivo e commitada em `d6681aa`.
+Os arquivos oficiais são identificados por revisão e SHA-256 em
+[source_manifest.yaml](config/source_manifest.yaml). A documentação da fonte cita
+863 produtos em alguns trechos; os arquivos observados contêm **865**, adotados como
+fonte de verdade. Os dados originais não são distribuídos neste repositório.
 
-## Arquitetura resumida
+### Resultado fora da amostra
 
-- `data/raw/`: dados de origem imutáveis.
-- `data/staging/`, `data/processed/` e `data/outputs/`: dados intermediários, tratados e saídas; não versionados.
-- `src/`: lógica definitiva, organizada por etapa; `sql/`: consultas DuckDB.
-- `notebooks/`: exploração; `config/`: parâmetros; `tests/`: validações; `scripts/`: execução auxiliar.
-- `powerbi/`: futura camada de comunicação e decisão; `docs/`: documentação e decisões metodológicas.
+| Modelo | WAPE | RMSE |
+|---|---:|---:|
+| Seasonal Naive | 41,83% | 0,836 |
+| ETS A/N/A | **35,62%** | **0,711** |
 
-## Política de reposição simulada
+A melhoria relativa é `(WAPE baseline − WAPE ETS) / WAPE baseline`. RMSE está na escala
+normalizada da fonte. O ETS usa sazonalidade semanal aditiva, sem tendência; os
+resultados preservam fallback e clipping auditáveis. Detalhes no
+[relatório do holdout](docs/final_holdout_evaluation_report.md).
 
-A política de reposição será simulada porque lead time e estoque físico não são fornecidos pela fonte. Esses parâmetros não serão apresentados como fatos observados.
+O erro histórico apresentou associação com o erro futuro (Spearman aproximadamente
+0,725–0,740). Séries HIGH tiveram maior magnitude absoluta de erro. Essas relações
+são descritivas e podem refletir escala; não demonstram causalidade ou demanda perdida.
+O [relatório de risco](docs/forecast_uncertainty_and_risk_report.md) diferencia exposição,
+censura potencial e persistência de subprevisão.
 
-## Reproduzir a Fase 1
+### Simulação de reposição
 
-Com Python 3.12 e o ambiente local ativo, execute na raiz:
+| Cenário hipotético | Buffer médio (SS) | Limiar médio (ROP) | Cobertura histórica, fold 4 | Target |
+|---|---:|---:|---:|---:|
+| LEAN | 0,572 | 1,646 | 79,65% | 90% |
+| BASE | 1,148 | 3,264 | 84,08% | 95% |
+| PROTECTED | 2,024 | 5,239 | 88,32% | 98% |
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-python scripts/ingest_data.py
-python scripts/validate_raw.py
-python -m pytest --basetemp=.tmp/pytest
-python -m pip check
+SS e ROP são **simulações em escala normalizada**, não estoque físico nem quantidade
+a comprar. As médias descrevem o snapshot final; a cobertura é resultado histórico
+do fold 4, não realização futura desse snapshot. Nenhum target nominal foi atingido.
+Os cenários apoiam análise de sensibilidade; BASE e PROTECTED não são recomendações
+automáticas. Consulte o [relatório de reposição](docs/replenishment_simulation_report.md).
+
+### Arquitetura e metodologia
+
+```mermaid
+flowchart LR
+    A[Dados e qualidade] --> B[Demanda e segmentação]
+    B --> C[Baselines e ETS]
+    C --> D[Backtest e holdout]
+    D --> E[Risco e reposição simulada]
+    E --> F[Modelo semântico e Power BI]
+    F --> G[Decisão]
 ```
 
-Em um clone novo, crie `.venv` com `python -m venv .venv` e instale as dependências com `python -m pip install .`. A primeira ingestão exige internet; reexecuções verificam os arquivos locais e não os sobrescrevem. Os testes de integração exigem a ingestão e a validação concluídas. Os scripts resolvem os caminhos a partir do repositório, sem edição manual.
+O fluxo cobre ingestão/quality, demand understanding, ABC/XYZ/exposure, baselines
+temporais, ETS, holdout final, incerteza/risco, simulação de reposição, modelo semântico
+e comunicação gerencial. O risco histórico foi congelado antes do holdout; sua
+associação com erro futuro foi examinada depois. Os folds usam snapshots prospectivos,
+sem reutilizar segmentação full-train como se fosse conhecida no passado.
 
-O staging preserva a origem train/eval. O bloco eval permanece reservado para futura avaliação temporal; combinar arquivos para armazenamento não autoriza seu uso em treino ou tuning. Detalhes em [architecture.md](docs/architecture.md) e [decisions.md](docs/decisions.md).
+Implementação em `src/`, consultas em `sql/`, parâmetros em `config/`, execução em
+`scripts/`, testes em `tests/` e notebooks em `notebooks/`. `data/raw`, `staging`,
+`processed`, `outputs` e `powerbi/data` são locais e ignorados.
 
-## Reproduzir a Fase 2
+## Power BI
 
-Após a ingestão da fonte, na raiz do projeto:
+| Página visível | Pergunta atendida |
+|---|---|
+| 01 Visão Executiva | Quais são os principais riscos e resultados? |
+| 02 Demanda & Forecast | Como se comportam a venda, a previsão e o erro? |
+| 03 Planejamento de Reposição | Como os cenários alteram a proteção simulada? |
+| 04 Recomendações & Decisão | Onde agir, o que investigar e o que ainda não automatizar? |
+
+### 01 — Visão Executiva
+
+![Visão Executiva](docs/assets/powerbi/01_visao_executiva.png)
+
+Síntese dos resultados e riscos para orientar a investigação.
+
+### 02 — Demanda & Forecast
+
+![Demanda & Forecast](docs/assets/powerbi/02_demanda_forecast.png)
+
+Comportamento observado, confiabilidade da previsão e concentração do erro.
+
+### 03 — Planejamento de Reposição
+
+![Planejamento de Reposição](docs/assets/powerbi/03_planejamento_reposicao.png)
+
+Cenários hipotéticos e seus efeitos sobre a proteção simulada.
+
+### 04 — Recomendações & Decisão
+
+![Recomendações & Decisão](docs/assets/powerbi/04_recomendacoes_decisao.png)
+
+Prioridades, limites e próximos passos antes de operacionalizar as decisões.
+
+**00 Validação** permanece como auditoria interna, oculta na navegação de leitura.
+As definições [PBIP](powerbi/previsao-demanda-varejo.pbip), PBIR Enhanced e TMDL são
+versionáveis; o PBIX e os CSVs gerados permanecem locais.
+
+Antes do primeiro refresh, configure **`pPowerBIDataRoot`** para `<repo>\powerbi\data`.
+O valor publicado é um placeholder genérico, não uma descoberta automática da pasta.
+Veja [como abrir e configurar o relatório](docs/powerbi_report.md), o
+[contrato de dados](docs/powerbi_data_contract.md), o
+[catálogo de medidas](docs/powerbi_measures.md) e o
+[sistema visual](docs/powerbi_visual_system.md).
+
+## Limitações que orientam a decisão
+
+- `sale_amount` é normalizado: não representa receita nem unidades físicas. Preços e custos completos não estão disponíveis.
+- Não há posição completa de estoque, pedidos/PO ou lead time real; a simulação não produz quantity-to-order.
+- São 90 dias de histórico e sete dias de holdout: não sustentam sazonalidade anual nem garantem estabilidade futura.
+- Rupturas podem censurar a venda observada; não há mensuração de demanda latente ou lost sales.
+- Cenários e targets são hipotéticos; cobertura não é fill rate, OTIF ou nível de serviço real validado.
+- `eval` foi aberto no holdout final one-shot. Já não é uma amostra intocada: retuning exige novo desenho de validação.
+
+## Reprodutibilidade
+
+Os comandos abaixo existem no projeto e devem ser executados na raiz. A reprodução
+integral é separada do fechamento e exige tempo, memória e artefatos das etapas anteriores.
+
+### 1. Ambiente
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/build_demand_profile.py
-.\.venv\Scripts\python.exe scripts/render_data_understanding.py
-.\.venv\Scripts\python.exe -m pytest
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install .
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-O primeiro script lê somente `train.parquet`, gera `data/processed/mart_demand_profile.parquet`,
-outputs de suporte em `data/outputs/demand_understanding/` e o relatório da Fase 2.
-O segundo executa [01_data_understanding.ipynb](notebooks/01_data_understanding.ipynb), com nove figuras
-baseadas nos outputs. Os nomes `*_demand` medem venda observada normalizada, não demanda latente.
-Definições, tratamento de métricas indefinidas e regras dos exemplos estão em [methodology.md](docs/methodology.md).
+Python 3.12 ou superior. Dependências em [pyproject.toml](pyproject.toml); não há
+lockfile de versões, portanto um ambiente futuro exige nova validação.
 
-## Reproduzir a Fase 3
-
-Após gerar os outputs da Fase 2:
+### 2. Ingestão e qualidade
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/build_segmentation.py
-.\.venv\Scripts\python.exe scripts/render_segmentation.py
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe scripts/ingest_data.py
+.\.venv\Scripts\python.exe scripts/validate_raw.py
 ```
 
-O pipeline verifica a proveniência de train, recalcula ABC por produto e cria os marts de ABC,
-XYZ, exposição e perfil operacional em processed. O notebook [02_segmentation.ipynb](notebooks/02_segmentation.ipynb)
-contém nove figuras baseadas nos outputs. As razões de XYZ, thresholds e alternativas comparadas
-ficam registradas no relatório e no resumo de execução. Nenhum score composto é criado.
+A ingestão obtém os arquivos da fonte oficial e verifica o manifesto; não baixa dados
+pelo Git. Testes de integração dependem dos dados e outputs locais já construídos.
 
-As classes descrevem o train até 25/06/2024. No backtesting futuro, recalcular perfil, ABC/XYZ e
-quantis em cada origem, sem reutilizar retrospectivamente o retrato integral. A Fase 4 implementa
-esse recálculo. Eval permanece congelado.
+### 3. Análises
 
-## Reproduzir a Fase 4
+| Etapa | Script existente | Referência |
+|---|---|---|
+| Perfil de demanda | `scripts/build_demand_profile.py` | [Entendimento](docs/demand_understanding_report.md) |
+| Segmentação | `scripts/build_segmentation.py` | [ABC/XYZ/exposição](docs/segmentation_report.md) |
+| Backtesting de baselines | `scripts/run_baseline_backtest.py` | [Baselines](docs/forecasting_baselines_report.md) |
+| ETS populacional | `scripts/run_statistical_forecast.py` | [ETS](docs/statistical_forecasting_report.md) |
+| Risco histórico | `scripts/build_forecast_risk_profile.py` | [Incerteza](docs/forecast_uncertainty_and_risk_report.md) |
+| Holdout final | `scripts/run_final_holdout.py` | [Protocolo one-shot](docs/final_holdout_protocol.md) |
+| Reposição simulada | `scripts/build_replenishment_simulation.py` | [Protocolo](docs/replenishment_simulation_protocol.md) |
 
-Após a ingestão de train, na raiz do projeto:
+Não execute esses scripts indiscriminadamente sobre o trabalho congelado. O runner ETS
+completo faz 200.000 ajustes. Com previsões existentes, oferece `--compare-only`; o
+holdout oferece `--evaluate-only`. Reproduzir resultados não restaura a independência
+de `eval`. Scripts `render_*.py` executam os notebooks de apresentação correspondentes.
+
+### 4. Exportação e abertura do Power BI
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/run_baseline_backtest.py
-.\.venv\Scripts\python.exe scripts/render_forecasting_baselines.py
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m pip check
-git diff --check
-git status
+.\.venv\Scripts\python.exe scripts/build_powerbi_layer.py
 ```
 
-O backtest lê somente o raw train verificado pelo manifesto e recalcula o perfil e a segmentação
-até cada corte. Não depende dos marts finais das fases anteriores. Gera os marts de previsões
-e métricas, sete Parquet auxiliares, resumo com hashes, telemetria e relatório. O notebook
-[03_forecasting_baselines.ipynb](notebooks/03_forecasting_baselines.ipynb) executado contém dez figuras
-que consomem esses outputs. A suíte completa também exige os outputs anteriores para seus testes.
+Requer os marts congelados indicados no contrato e gera os seis CSVs em `powerbi/data/`.
+Abra `powerbi/previsao-demanda-varejo.pbip` no Desktop e configure a fonte conforme
+[powerbi_report.md](docs/powerbi_report.md). Um clone sem cache abre a definição sem dados;
+o refresh local depende dos CSVs e da configuração do parâmetro.
 
-São 2,8 milhões de previsões de venda observada normalizada, horizonte de sete dias e quatro
-origens (29/05, 05/06, 12/06 e 19/06/2024). WAPE global: Naive 43,49%; Seasonal Naive 42,29%.
-Dados e figuras soltas são ignorados; código, testes, documentação e notebook são elegíveis para Git.
-Nenhum commit ou avanço de fase é executado automaticamente.
+### 5. Testes
 
-## Reproduzir a comparação da Fase 5
+`python -m pytest -q --basetemp=.tmp/pytest` executa a suíte completa, incluindo reproduções
+populacionais e pequenos ajustes ETS. Para o fechamento sem fitting nem reconstrução,
+as exclusões e o resultado estão em [validação final](docs/final_validation.md).
 
-```powershell
-.\.venv\Scripts\python.exe scripts/run_statistical_forecast.py --compare-only
-.\.venv\Scripts\python.exe scripts/render_statistical_forecasting.py
-.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase5-population-final --deselect=tests/test_raw_quality.py::test_raw_files_manifest_hashes_and_schema --deselect=tests/test_raw_quality.py::test_staging_reproducible_from_full_raw
-.\.venv\Scripts\python.exe -m pip check
-```
+## Em 15–30 minutos
 
-`--compare-only` reutiliza as previsões salvas sem repetir ajustes. Em uma primeira execução
-populacional autorizada, o comando sem essa opção produz os forecasts; ele recusa sobrescrever
-um resultado final ou parcial existente. A leitura ocorre em lotes de 2.500 históricos cortados
-na origem. Preserva fallback Seasonal Naive, razões, forecast original e clipping negativo.
+Comece pelo [walkthrough do portfólio](docs/portfolio_walkthrough.md). Depois consulte:
 
-São gerados `mart_forecast_statistical.parquet`, `mart_model_comparison.parquet` e auxiliares em
-`data/outputs/statistical_forecasting/`. A comparação reutiliza snapshots prospectivos e forecasts
-da Fase 4, verificados por hash. O notebook [04_statistical_forecasting.ipynb](notebooks/04_statistical_forecasting.ipynb)
-consome somente esses outputs e produz dez figuras. MAE, RMSE, WAPE, bias, materialidade e
-potencial híbrido são documentados no relatório; não há MAPE nem política operacional final.
+- [Metodologia](docs/methodology.md), [arquitetura](docs/architecture.md) e [decisões](docs/decisions.md).
+- [Qualidade](docs/data_quality_report.md), [dicionário](docs/data_dictionary.md) e [limitações](docs/limitations.md).
+- [Holdout final](docs/final_holdout_evaluation_report.md), [incerteza](docs/forecast_uncertainty_and_risk_report.md) e [reposição](docs/replenishment_simulation_report.md).
+- [Notebooks](notebooks/), [implementação](src/) e [testes](tests/).
 
-O benchmark anterior, em 135 séries e 540 ajustes por configuração, é preservado sem reexecução.
-A/A/A não participa da execução populacional. A validação mantém os 92 testes anteriores e
-acrescenta contratos populacionais/comparação. Os dois testes legados indicados em `--deselect`
-abririam eval para verificar ingestão/staging: permanecem intactos, mas não são executados nesta
-rodada. Temporários locais evitam o problema anterior de I/O em AppData. Reprodução de ajustes
-usa seis séries; nenhuma segunda execução dos 200.000 ajustes é exigida antes da revisão.
-
-Validação final: **98 testes aprovados, dois legados desmarcados**, em 123,69 s; `pip check`
-e `git diff --check` aprovados. A reprodução dos seis ajustes usa uma thread numérica, como
-o runner, e exige igualdade exata. Notebook executado com dez figuras e nenhum erro.
-Esse resultado foi revisado e aprovado; a Fase 5 está commitada em `6a7ccec`, com as ressalvas do relatório.
-
-## Reproduzir a Fase 6
-
-Após os outputs aprovados das fases 2, 3 e 5:
-
-```powershell
-.\.venv\Scripts\python.exe scripts/build_forecast_risk_profile.py
-.\.venv\Scripts\python.exe scripts/render_forecast_uncertainty.py
-.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase6-final --deselect=tests/test_raw_quality.py::test_raw_files_manifest_hashes_and_schema --deselect=tests/test_raw_quality.py::test_staging_reproducible_from_full_raw
-.\.venv\Scripts\python.exe -m pip check
-git diff --check
-git status
-```
-
-O pipeline verifica hashes e escopo train dos marts existentes e agrega 1,4 milhão de erros;
-não lê raw nem ajusta modelos. Publica três marts em processed, 14 Parquet auxiliares e um
-resumo determinístico em outputs/forecast_uncertainty. A reprodução compara seus hashes em
-uma raiz sem raw/eval, com ajuste ETS bloqueado. Os dois testes legados acima permanecem
-preservados e desmarcados porque abririam eval.
-
-[05_forecast_uncertainty_and_risk.ipynb](notebooks/05_forecast_uncertainty_and_risk.ipynb)
-consome esses outputs e contém dez figuras. Bias negativo em pelo menos três dos quatro
-folds, junto de bias consolidado negativo, define persistência. O retrato operacional de
-25/06 serve ao diagnóstico posterior; a avaliação prospectiva da Fase 5 permanece intacta.
-Não há correção de forecast, demanda latente, lost sales ou fórmula de estoque.
-
-Validação final da Fase 6: **106 testes aprovados e dois legados desmarcados**, em 169,47 s.
-Os 17 Parquet e o resumo foram reproduzidos por hash, sem raw/eval ou ajuste ETS no pipeline
-da Fase 6. A suíte também preserva as reproduções legadas em temporários, incluindo seis
-ajustes ETS; nenhuma reexecução populacional ocorreu. Os hashes oficiais da Fase 5 continuam
-iguais. Notebook com dez figuras e nenhum erro; `pip check` e `git diff --check` aprovados.
-Recomendação técnica: Fase 6 aprovada para revisão descritiva, com sensibilidade do bias global
-ao fold 4 explicitada. Stage vazio; entrega sem commit e sem avanço de fase.
-
-## Fase 7 — avaliação final autorizada
-
-O usuário autorizou a primeira abertura analítica de eval somente após o congelamento e commit
-das fases 0–6. [Protocolo anterior à abertura](docs/final_holdout_protocol.md): ETS A/N/A e
-Seasonal Naive, 50.000 séries, origem 26/06/2024, sete passos diretos, treino encerrado em 25/06.
-Previsões dos dois modelos são persistidas sem actuals antes da leitura do holdout. Labels,
-flags, fallback, clipping e hiperparâmetros anteriores permanecem inalterados.
-
-```powershell
-# Única primeira execução autorizada; recusa execução final/parcial já existente:
-.\.venv\Scripts\python.exe scripts/run_final_holdout.py --fit-only
-# Reproduzir avaliação sem refit:
-.\.venv\Scripts\python.exe scripts/run_final_holdout.py --evaluate-only
-.\.venv\Scripts\python.exe scripts/render_final_holdout.py
-.\.venv\Scripts\python.exe -m pytest --basetemp=.tmp/pytest-phase7-final
-.\.venv\Scripts\python.exe -m pip check
-git diff --check
-git status
-```
-
-Resultados em [final_holdout_evaluation_report.md](docs/final_holdout_evaluation_report.md) e
-[06_final_holdout_evaluation.ipynb](notebooks/06_final_holdout_evaluation.ipynb), com dez figuras
-que leem outputs. A suíte completa pode agora executar os dois testes legados de ingestão/staging
-antes excluídos, pois a abertura do holdout foi autorizada. Não apagar as exclusões documentadas
-nas rodadas históricas. Os três marts holdout e seus auxiliares são ignorados pelo Git.
-Esta entrega não faz commit, tuning, reposição ou Power BI.
-
-Resultado final holdout: ETS WAPE **35,62%**, Seasonal Naive **41,83%**; ganho **14,85%** em
-MAE/WAPE e **14,90%** em RMSE. Os 50.000 ajustes terminaram sem fallback, em 7,10 minutos
-incluindo I/O. Bias_pct ETS **−2,25%**, contra **+0,28%** do baseline. Classificação conjunta
-**B — confirmação parcial**: forte confirmação da vantagem de erro do ETS, porém separação
-prospectiva fraca da persistência (56,12% versus 54,29% com bias negativo) e confirmação não
-uniforme da matriz de risco. Não se alterou nenhuma regra após observar esses resultados.
-
-Validação final: **118 testes aprovados, sem falhas ou exclusões**, em 203,21 s conforme XML.
-Os 13 Parquet e o resumo foram reproduzidos em raiz sem train, com fitting bloqueado; os 53
-artefatos anteriores e forecasts pré-eval continuam íntegros. Notebook com dez figuras e zero
-erros; `pip check` e `git diff --check` aprovados. A retomada confirmou os registros existentes
-sem repetir forecasting. Recomendação técnica: Fase 7 aprovada para revisão, com classificação B
-e ressalvas explícitas. Entrega sem commit; stage vazio; reposição e Power BI não iniciados.
-
-## Fase 8 — simulação de política de reposição
-
-Forecasting congelado em `3c52827`: esta fase não ajusta modelos nem abre actuals de eval.
-Usa erros dos quatro backtests de train e previsões finais salvas antes da abertura do holdout.
-[Protocolo anterior à avaliação](docs/replenishment_simulation_protocol.md),
-[relatório](docs/replenishment_simulation_report.md) e
-[notebook com dez figuras](notebooks/07_replenishment_simulation.ipynb).
-
-LEAN (L1/q90), BASE (L2/q95) e PROTECTED (L3/q98) são hipóteses. `service_level` é o alias
-legado de cobertura alvo da venda observada normalizada; não é fill rate ou serviço real.
-Safety stock e reorder point são limiares simulados, sem quantidade de compra, estoque
-inventado, custos ou Power BI. Flags são overlays, sem multiplicadores.
-
-```powershell
-.\.venv\Scripts\python.exe scripts/build_replenishment_simulation.py
-.\.venv\Scripts\python.exe scripts/render_replenishment_simulation.py
-.\.venv\Scripts\python.exe -m pytest tests/test_replenishment_simulation.py tests/test_environment.py --basetemp=.tmp/pytest-phase8-final
-.\.venv\Scripts\python.exe -m pip check
-git diff --check
-git status
-```
-
-Nesta fase, não executar a suíte legada completa: alguns testes refazem ETS ou abrem
-raw/actuals de holdout. A validação da Fase 7 de 118 testes e exclusões históricas anteriores
-continuam documentadas; não são substituídas por uma alegação de execução completa na Fase 8.
-A nova suíte verifica reprodução integral sem eval e com eval artificialmente corrompido.
-
-A validação folds 1–3 → fold4 mostrou cobertura empírica de **79,648% / 84,084% / 88,322%**,
-abaixo dos três alvos. Não houve ajuste posterior para aproximá-los. A entrega é uma
-simulação descritiva auditável, não política operacional validada. Marts novos ignorados:
-`mart_replenishment_simulation` (150 mil linhas), `mart_replenishment_calibration` e
-`mart_replenishment_summary`. Sem commit e sem avanço para Power BI.
+**Stack utilizada:** Python, pandas, NumPy, statsmodels, DuckDB, PyArrow, pytest,
+matplotlib/Jupyter, Power BI, DAX, PBIP/PBIR e Git. scikit-learn integra o ambiente e
+o teste de importação; não foi usado para treinar um modelo adicional.
