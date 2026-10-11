@@ -1,0 +1,80 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "d9f03710cb0e28737246",
+  "position": {
+    "x": 1067.2962764737365,
+    "y": 779.802737212325,
+    "z": 9,
+    "height": 276.21928281978745,
+    "width": 635.116446211484,
+    "tabOrder": 9
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_scenario"
+                    }
+                  },
+                  "Property": "scenario"
+                }
+              },
+              "queryRef": "dim_scenario.scenario",
+              "nativeQueryRef": "scenario"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "A Buffer Share"
+                }
+              },
+              "queryRef": "_Medidas.A Buffer Share",
+              "nativeQueryRef": "A Buffer Share"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Z Buffer Share"
+                }
+              },
+              "queryRef": "_Medidas.Z Buffer Share",
+              "nativeQueryRef": "Z Buffer Share"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "High Exposure Average Safety Stock"
+                }
+              },
+              "queryRef": "_Medidas.High Exposure Average Safety Stock",
+              "nativeQueryRef": "High Exposure Average Safety Stock"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

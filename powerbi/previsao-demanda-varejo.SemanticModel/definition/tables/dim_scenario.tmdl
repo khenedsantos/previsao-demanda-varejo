@@ -1,0 +1,62 @@
+table dim_scenario
+	lineageTag: 30ca9468-e5ec-48b9-ab33-bcfbd5ec7613
+
+	column scenario
+		dataType: string
+		lineageTag: 002c1fd0-51ca-4527-8936-ce5ad02ee801
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario_order
+		dataType: int64
+		formatString: 0
+		lineageTag: 2ccad249-695b-4107-a2e8-54d7c5158cde
+		summarizeBy: sum
+		sourceColumn: scenario_order
+
+		annotation SummarizationSetBy = Automatic
+
+	column lead_time_days
+		dataType: int64
+		formatString: 0
+		lineageTag: d1340c5a-aa60-417f-86c3-808111e160f9
+		summarizeBy: sum
+		sourceColumn: lead_time_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column target_coverage_level
+		dataType: double
+		lineageTag: 6891c790-416e-4c51-b093-a5b6a0ae138e
+		summarizeBy: sum
+		sourceColumn: target_coverage_level
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column scenario_description
+		dataType: string
+		lineageTag: 947dfc43-1601-46b3-88ad-ad83750b3fcd
+		summarizeBy: none
+		sourceColumn: scenario_description
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_scenario = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\dim_scenario.csv"),[Delimiter=",", Columns=5, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"scenario", type text}, {"scenario_order", Int64.Type}, {"lead_time_days", Int64.Type}, {"target_coverage_level", type text}}),
+				    #"Tipo Alterado com Localidade" = Table.TransformColumnTypes(#"Tipo Alterado", {{"target_coverage_level", type number}}, "en-US"),
+				    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Tipo Alterado com Localidade",{{"scenario_description", type text}})
+				in
+				    #"Tipo Alterado1"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

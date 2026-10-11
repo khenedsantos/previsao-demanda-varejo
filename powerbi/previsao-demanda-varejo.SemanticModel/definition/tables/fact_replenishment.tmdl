@@ -1,0 +1,162 @@
+table fact_replenishment
+	lineageTag: f81579ac-80ee-48a6-8d4b-a39d1015eb3c
+
+	column series_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 37d2531d-b22c-44f6-8b6b-b08541fd0ffb
+		summarizeBy: none
+		sourceColumn: series_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column scenario
+		dataType: string
+		lineageTag: f46d416d-2f7a-43c8-85fb-6e8ecb1c8574
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column lead_time_days
+		dataType: int64
+		formatString: 0
+		lineageTag: 402bc9c6-39d1-4f6a-aab2-f5165027a00b
+		summarizeBy: sum
+		sourceColumn: lead_time_days
+
+		annotation SummarizationSetBy = Automatic
+
+	column target_coverage_level
+		dataType: double
+		lineageTag: 65411c9c-9731-4fac-ba93-87da528b7157
+		summarizeBy: sum
+		sourceColumn: target_coverage_level
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column lead_time_forecast
+		dataType: double
+		lineageTag: 5e5a0ec1-626a-4c3d-9ea0-6afc7392a50b
+		summarizeBy: sum
+		sourceColumn: lead_time_forecast
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column historical_error_std
+		dataType: double
+		lineageTag: 5c8f1bf8-de08-42ae-aa98-6933170cc249
+		summarizeBy: sum
+		sourceColumn: historical_error_std
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column empirical_multiplier
+		dataType: double
+		lineageTag: 934a10b5-b232-4b7a-8012-92f0384cb073
+		summarizeBy: sum
+		sourceColumn: empirical_multiplier
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column safety_stock
+		dataType: double
+		lineageTag: ce8c6855-46a6-4ec7-a57d-134d72477f54
+		summarizeBy: sum
+		sourceColumn: safety_stock
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column reorder_point
+		dataType: double
+		lineageTag: 4d7028a1-6d72-420f-81f1-ed588e66341d
+		summarizeBy: sum
+		sourceColumn: reorder_point
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column buffer_to_forecast_ratio
+		dataType: double
+		lineageTag: b6c68925-6fd9-4fec-b196-7eecad1bc88e
+		summarizeBy: sum
+		sourceColumn: buffer_to_forecast_ratio
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column equivalent_coverage_days
+		dataType: double
+		lineageTag: df6491b3-3d1d-470f-ab2c-0dc01a5eb7d0
+		summarizeBy: sum
+		sourceColumn: equivalent_coverage_days
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column calibration_level_used
+		dataType: string
+		lineageTag: 616ff0fe-722c-4138-9391-5c1b2fef5c3c
+		summarizeBy: none
+		sourceColumn: calibration_level_used
+
+		annotation SummarizationSetBy = Automatic
+
+	column calibration_n
+		dataType: int64
+		formatString: 0
+		lineageTag: 5260a430-188e-499b-b65a-3de34957a9e3
+		summarizeBy: sum
+		sourceColumn: calibration_n
+
+		annotation SummarizationSetBy = Automatic
+
+	column as_of
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: e7a02b00-8dbd-44b7-8b6e-ff32c57dd49e
+		summarizeBy: none
+		sourceColumn: as_of
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column available_from
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 12153915-e5b6-40fc-822c-b9b312740296
+		summarizeBy: none
+		sourceColumn: available_from
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition fact_replenishment = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\fact_replenishment.csv"),[Delimiter=",", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    #"Tipo Alterado com Localidade" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos", {{"target_coverage_level", type number}, {"lead_time_forecast", type number}, {"historical_error_std", type number}, {"empirical_multiplier", type number}, {"safety_stock", type number}, {"reorder_point", type number}, {"buffer_to_forecast_ratio", type number}, {"equivalent_coverage_days", type number}}, "en-US"),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Tipo Alterado com Localidade",{{"series_key", Int64.Type}, {"scenario", type text}, {"lead_time_days", Int64.Type}, {"calibration_level_used", type text}, {"calibration_n", Int64.Type}, {"as_of", type date}, {"available_from", type date}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

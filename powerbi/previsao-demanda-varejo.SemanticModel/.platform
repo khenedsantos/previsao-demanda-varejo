@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "previsao-demanda-varejo"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "a0725f73-ebd4-4056-a2be-770968810425"
+  }
+}

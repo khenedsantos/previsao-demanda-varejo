@@ -1,0 +1,75 @@
+table fact_scenario_validation
+	lineageTag: 9df0364b-6771-45ed-9996-f4a6a0b23ea5
+
+	column scenario
+		dataType: string
+		lineageTag: 86314988-122a-4d03-af00-dabe7378e2b8
+		summarizeBy: none
+		sourceColumn: scenario
+
+		annotation SummarizationSetBy = Automatic
+
+	column target_coverage_level
+		dataType: double
+		lineageTag: ac98f61b-b9dc-41ee-bd38-e5c028f7e910
+		summarizeBy: sum
+		sourceColumn: target_coverage_level
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column observed_coverage_rate
+		dataType: double
+		lineageTag: 7e15e1c8-208f-4231-b906-524973f736ac
+		summarizeBy: sum
+		sourceColumn: observed_coverage_rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column coverage_gap
+		dataType: double
+		lineageTag: d6ce7ca0-cc56-4a8b-a4b9-a471f79375b1
+		summarizeBy: sum
+		sourceColumn: coverage_gap
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column normal_reference_coverage
+		dataType: double
+		lineageTag: 48719c32-bcb3-403a-bd79-cee7c1d44f66
+		summarizeBy: sum
+		sourceColumn: normal_reference_coverage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column validation_stage
+		dataType: string
+		lineageTag: 900f529a-9176-429c-a066-0a46d035a523
+		summarizeBy: none
+		sourceColumn: validation_stage
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_scenario_validation = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\fact_scenario_validation.csv"),[Delimiter=",", Columns=6, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"scenario", type text}}),
+				    #"Tipo Alterado com Localidade" = Table.TransformColumnTypes(#"Tipo Alterado", {{"target_coverage_level", type number}}, "en-US"),
+				    #"Tipo Alterado com Localidade1" = Table.TransformColumnTypes(#"Tipo Alterado com Localidade", {{"observed_coverage_rate", type number}, {"coverage_gap", type number}, {"normal_reference_coverage", type number}}, "en-US"),
+				    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Tipo Alterado com Localidade1",{{"validation_stage", type text}})
+				in
+				    #"Tipo Alterado1"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,196 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "0e9851f148f16c032479",
+  "position": {
+    "x": 133.41203455921706,
+    "y": 180.38810306598361,
+    "z": 2,
+    "height": 244.27555623518617,
+    "width": 761.01230980961839,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "fact_forecast"
+                    }
+                  },
+                  "Property": "model"
+                }
+              },
+              "queryRef": "fact_forecast.model",
+              "nativeQueryRef": "model"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Forecast Rows"
+                }
+              },
+              "queryRef": "_Medidas.Forecast Rows",
+              "nativeQueryRef": "Forecast Rows"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "MAE"
+                }
+              },
+              "queryRef": "_Medidas.MAE",
+              "nativeQueryRef": "MAE"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "RMSE"
+                }
+              },
+              "queryRef": "_Medidas.RMSE",
+              "nativeQueryRef": "RMSE"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "WAPE"
+                }
+              },
+              "queryRef": "_Medidas.WAPE",
+              "nativeQueryRef": "WAPE"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Bias %"
+                }
+              },
+              "queryRef": "_Medidas.Bias %",
+              "nativeQueryRef": "Bias %"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "b50df3a1102694a47daa",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "fact_forecast"
+              }
+            },
+            "Property": "model"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "43392e3a19b7dc36f67a",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Forecast Rows"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "634b58262cdb90c722be",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "MAE"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "20fce40977f3d7893d96",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "RMSE"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2ac24285a1950d3570b2",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "WAPE"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "edb21fb8a93b7a689bd4",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Bias %"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

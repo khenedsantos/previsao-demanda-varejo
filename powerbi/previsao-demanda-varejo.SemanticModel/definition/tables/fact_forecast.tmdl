@@ -1,0 +1,133 @@
+table fact_forecast
+	lineageTag: d4b25cc8-8f0c-4b1d-bb8b-a419411fb4a9
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 25cec6ee-07fa-4b03-a392-0a08b8bb1fce
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column series_key
+		dataType: int64
+		formatString: 0
+		lineageTag: f83b5c3f-b3e8-4119-a58a-63faeb5fda0d
+		summarizeBy: none
+		sourceColumn: series_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column model
+		dataType: string
+		lineageTag: 99717946-beb4-4f80-91c7-d929461a1735
+		summarizeBy: none
+		sourceColumn: model
+
+		annotation SummarizationSetBy = Automatic
+
+	column model_code
+		dataType: string
+		lineageTag: 4d12df35-92d6-467b-be32-9ebf5a5dac61
+		summarizeBy: none
+		sourceColumn: model_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column actual
+		dataType: double
+		lineageTag: 652e67dc-fb08-47a4-b1a6-f4f179e2cd06
+		summarizeBy: sum
+		sourceColumn: actual
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column forecast
+		dataType: double
+		lineageTag: d1bcca24-a9bc-4999-85c4-a438e9cbb7d8
+		summarizeBy: sum
+		sourceColumn: forecast
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column forecast_unclipped
+		dataType: double
+		lineageTag: 355b52b0-c69c-412b-90c4-59aab05b907e
+		summarizeBy: sum
+		sourceColumn: forecast_unclipped
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column error
+		dataType: double
+		lineageTag: bdc90d56-f39c-4800-8c46-8fca33df8324
+		summarizeBy: sum
+		sourceColumn: error
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column absolute_error
+		dataType: double
+		lineageTag: 4dc26e46-2f93-4242-bb39-b17133f5e58b
+		summarizeBy: sum
+		sourceColumn: absolute_error
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column squared_error
+		dataType: double
+		lineageTag: f74db99c-89df-4777-9f9c-99dd0dfb880c
+		summarizeBy: sum
+		sourceColumn: squared_error
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column fallback_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 93354d68-aaf2-4e73-b56d-e5281d53d758
+		summarizeBy: none
+		sourceColumn: fallback_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column negative_clipped
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: e2689651-0327-46b2-966c-c53621796efa
+		summarizeBy: none
+		sourceColumn: negative_clipped
+
+		annotation SummarizationSetBy = Automatic
+
+	partition fact_forecast = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\fact_forecast.csv"),[Delimiter=",", Columns=12, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Alterar Tipo" = Table.TransformColumnTypes(Fonte,{{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}, {"Column5", type text}, {"Column6", type text}, {"Column7", type text}, {"Column8", type text}, {"Column9", type text}, {"Column10", type text}, {"Column11", type text}, {"Column12", type text}}),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(#"Alterar Tipo", [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"date", type date}, {"series_key", Int64.Type}, {"model", type text}, {"model_code", type text}}),
+				    #"Tipo Alterado com Localidade" = Table.TransformColumnTypes(#"Tipo Alterado", {{"actual", type number}, {"forecast", type number}, {"forecast_unclipped", type number}, {"error", type number}, {"absolute_error", type number}, {"squared_error", type number}}, "en-US"),
+				    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Tipo Alterado com Localidade",{{"fallback_flag", type logical}, {"negative_clipped", type logical}})
+				in
+				    #"Tipo Alterado1"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

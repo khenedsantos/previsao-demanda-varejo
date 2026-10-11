@@ -1,0 +1,141 @@
+createOrReplace
+
+	ref table _Medidas
+
+		/// Erro absoluto médio na escala normalizada. Requer exatamente 1 model.
+		measure 'MAE' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[absolute_error] ), COUNTROWS ( fact_forecast ) ), BLANK () )
+			formatString: 0.000
+			displayFolder: 01 Forecast
+
+		/// Raiz da média dos erros quadráticos; não média de RMSEs. Requer exatamente 1 model.
+		measure 'RMSE' = IF ( HASONEVALUE ( fact_forecast[model] ), SQRT ( DIVIDE ( SUM ( fact_forecast[squared_error] ), COUNTROWS ( fact_forecast ) ) ), BLANK () )
+			formatString: 0.000
+			displayFolder: 01 Forecast
+
+		/// Ratio das somas dos erros absolutos e actual; nunca média de WAPEs. Requer 1 model; denominador zero retorna BLANK.
+		measure 'WAPE' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[absolute_error] ), SUM ( fact_forecast[actual] ) ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// Erro assinado relativo ao actual; negativo indica subprevisão. Requer 1 model; denominador zero retorna BLANK.
+		measure 'Bias %' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[error] ), SUM ( fact_forecast[actual] ) ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// Actual único, usando ETS como cópia canônica para evitar duplicação entre modelos. Remove somente model/model_code; mantém date e filtros de dim_series.
+		measure 'Actual Total' = CALCULATE ( CALCULATE ( SUM ( fact_forecast[actual] ), fact_forecast[model] = "ETS" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+			formatString: #,##0.00
+			displayFolder: 01 Forecast
+
+		/// Soma do forecast congelado na escala normalizada. Requer 1 model; não soma modelos alternativos.
+		measure 'Forecast Total' = IF ( HASONEVALUE ( fact_forecast[model] ), SUM ( fact_forecast[forecast] ), BLANK () )
+			formatString: #,##0.00
+			displayFolder: 01 Forecast
+
+		/// Proporção de previsões diárias com error < 0. Requer 1 model; zero ocorrências dá 0; sem linhas dá BLANK.
+		measure 'Underforecast Rate' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( COALESCE ( COUNTROWS ( FILTER ( fact_forecast, fact_forecast[error] < 0 ) ), 0 ), COUNTROWS ( fact_forecast ) ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// WAPE do ETS independentemente do filtro atual de modelo. Limpa model e model_code; preserva filtros de datas/séries.
+		measure 'ETS WAPE' = CALCULATE ( CALCULATE ( [WAPE], fact_forecast[model] = "ETS" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// WAPE do baseline Seasonal Naive. Limpa model e model_code; preserva filtros de datas/séries.
+		measure 'Seasonal Naive WAPE' = CALCULATE ( CALCULATE ( [WAPE], fact_forecast[model] = "Seasonal Naive" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// Melhoria relativa do WAPE ETS contra o baseline. BLANK se faltar algum modelo ou baseline tiver WAPE zero.
+		measure 'WAPE Improvement vs Baseline' = VAR EtsWape = [ETS WAPE] VAR BaselineWape = [Seasonal Naive WAPE] RETURN IF ( NOT ISBLANK ( EtsWape ) && NOT ISBLANK ( BaselineWape ), DIVIDE ( BaselineWape - EtsWape, BaselineWape ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 01 Forecast
+
+		/// Buffer simulado médio na escala normalizada, não unidades físicas. Requer 1 cenário; não é compra recomendada ou estoque real.
+		measure 'Average Safety Stock' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[safety_stock] ), BLANK () )
+			formatString: 0.000
+			displayFolder: 02 Replenishment
+
+		/// Limiar simulado médio na escala normalizada, não estoque físico. Requer 1 cenário; sem posição atual ou quantidade a comprar.
+		measure 'Average Reorder Point' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[reorder_point] ), BLANK () )
+			formatString: 0.000
+			displayFolder: 02 Replenishment
+
+		/// Ratio das somas de buffer e forecast acumulado, não média dos ratios individuais. Requer 1 cenário; denominador zero retorna BLANK.
+		measure 'Buffer Ratio' = IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( SUM ( fact_replenishment[safety_stock] ), SUM ( fact_replenishment[lead_time_forecast] ) ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 02 Replenishment
+
+		/// Média da cobertura equivalente; ignora BLANKs e não representa dias reais garantidos de estoque. Requer 1 cenário; equivalência na escala prevista.
+		measure 'Average Equivalent Coverage Days' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[equivalent_coverage_days] ), BLANK () )
+			formatString: 0.000
+			displayFolder: 02 Replenishment
+
+		/// Proporção de séries com buffer simulado acima do forecast de lead time. Requer 1 cenário; não indica ruptura nem recomendação de compra.
+		measure 'Safety Stock Above Forecast Rate' = IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( COALESCE ( COUNTROWS ( FILTER ( fact_replenishment, fact_replenishment[safety_stock] > fact_replenishment[lead_time_forecast] ) ), 0 ), COUNTROWS ( fact_replenishment ) ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 02 Replenishment
+
+		/// Hipótese de cobertura do cenário, não service level real, fill rate ou OTIF. Requer 1 cenário; não responde a filtros de série ou data.
+		measure 'Target Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[target_coverage_level] ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 03 Validation
+
+		/// Resultado global da validação temporal histórica no fold4. Requer 1 cenário; não responde a filtros de série ou data.
+		measure 'Observed Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[observed_coverage_rate] ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 03 Validation
+
+		/// Cobertura observada menos target; fração assinada equivalente a pontos percentuais ao multiplicar por 100. Requer 1 cenário; não responde a filtros de série ou data.
+		measure 'Coverage Gap' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[coverage_gap] ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 03 Validation
+
+		/// Cobertura histórica global da referência Normal no fold4. Requer 1 cenário; não responde a filtros de série ou data.
+		measure 'Normal Reference Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[normal_reference_coverage] ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 03 Validation
+
+		/// Compara a cobertura histórica com o target hipotético. Requer 1 cenário e gap disponível; BLANK não é target atingido.
+		measure 'Coverage Status' = VAR Gap = [Coverage Gap] RETURN IF ( HASONEVALUE ( dim_scenario[scenario] ) && NOT ISBLANK ( Gap ), IF ( Gap >= 0, "Target atingido", "Abaixo do target" ), BLANK () )
+			displayFolder: 03 Validation
+
+		/// Quantidade de séries distintas no contexto da dimensão. Responde a filtros de dim_series; datas/modelos não retrofiltram a dimensão.
+		measure 'Series Count' = DISTINCTCOUNT ( dim_series[series_key] )
+			formatString: #,##0
+			displayFolder: 04 Executive
+
+		/// Quantidade de séries HIGH no contexto atual. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+		measure 'High Exposure Series' = COALESCE ( CALCULATE ( [Series Count], KEEPFILTERS ( dim_series[stockout_exposure] = "HIGH" ) ), 0 )
+			formatString: #,##0
+			displayFolder: 04 Executive
+
+		/// Quantidade de séries com os dois sinais históricos. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+		measure 'Double Signal Series' = COALESCE ( CALCULATE ( [Series Count], KEEPFILTERS ( dim_series[demand_observation_risk_cell] = "CENSORING_AND_UNDERFORECAST" ) ), 0 )
+			formatString: #,##0
+			displayFolder: 04 Executive
+
+		/// Quantidade de séries A com os dois sinais históricos. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+		measure 'A Double Signal Series' = COALESCE ( CALCULATE ( [Series Count], KEEPFILTERS ( dim_series[abc_class] = "A" ), KEEPFILTERS ( dim_series[demand_observation_risk_cell] = "CENSORING_AND_UNDERFORECAST" ) ), 0 )
+			formatString: #,##0
+			displayFolder: 04 Executive
+
+		/// Participação de A no buffer simulado do cenário. Requer 1 cenário; força A no numerador e remove só abc_class no denominador; mantém os demais filtros.
+		measure 'A Buffer Share' = VAR Numerator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), dim_series[abc_class] = "A" ) VAR Denominator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), REMOVEFILTERS ( dim_series[abc_class] ) ) RETURN IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( Numerator, Denominator ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 04 Executive
+
+		/// Participação de Z no buffer simulado do cenário. Requer 1 cenário; força Z no numerador e remove só xyz_class no denominador; mantém os demais filtros.
+		measure 'Z Buffer Share' = VAR Numerator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), dim_series[xyz_class] = "Z" ) VAR Denominator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), REMOVEFILTERS ( dim_series[xyz_class] ) ) RETURN IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( Numerator, Denominator ), BLANK () )
+			formatString: 0.00%
+			displayFolder: 04 Executive
+
+		/// Buffer simulado médio das séries HIGH; escala normalizada. Requer 1 cenário; intersecta exposure com o filtro atual, sem forçar HIGH sobre LOW.
+		measure 'High Exposure Average Safety Stock' = CALCULATE ( [Average Safety Stock], KEEPFILTERS ( dim_series[stockout_exposure] = "HIGH" ) )
+			formatString: 0.000
+			displayFolder: 04 Executive
+
+		/// Cenário único ou instrução textual de seleção. Nenhum ou vários cenários: Selecione um cenário.
+		measure 'Selected Scenario' = SELECTEDVALUE ( dim_scenario[scenario], "Selecione um cenário" )
+			displayFolder: 04 Executive

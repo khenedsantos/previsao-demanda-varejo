@@ -1,0 +1,2 @@
+expression pPowerBIDataRoot = "C:\PATH\TO\previsao-demanda-varejo\powerbi\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	annotation PBI_ResultType = Text

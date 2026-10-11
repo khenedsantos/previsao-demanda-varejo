@@ -1,0 +1,93 @@
+table dim_series
+	lineageTag: 17d00573-6763-4e45-8d9a-dce721ab56bb
+
+	column series_key
+		dataType: int64
+		formatString: 0
+		lineageTag: 5f8b8944-73f9-4d8a-b7bc-3423b75f0c3b
+		summarizeBy: none
+		sourceColumn: series_key
+
+		annotation SummarizationSetBy = Automatic
+
+	column store_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e448bcb0-b6a3-44ae-bbb9-ca16d82c0bca
+		summarizeBy: sum
+		sourceColumn: store_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column product_id
+		dataType: int64
+		formatString: 0
+		lineageTag: e888488f-89ab-410a-a68a-e224adda43e2
+		summarizeBy: sum
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column abc_class
+		dataType: string
+		lineageTag: cacb67c8-af60-4541-9192-f0239ddf362d
+		summarizeBy: none
+		sourceColumn: abc_class
+
+		annotation SummarizationSetBy = Automatic
+
+	column xyz_class
+		dataType: string
+		lineageTag: 699a41f5-4f75-4d03-866f-8fe68756cbe6
+		summarizeBy: none
+		sourceColumn: xyz_class
+
+		annotation SummarizationSetBy = Automatic
+
+	column stockout_exposure
+		dataType: string
+		lineageTag: a7b7ab8f-c50b-486d-96a0-131e55d09f6e
+		summarizeBy: none
+		sourceColumn: stockout_exposure
+
+		annotation SummarizationSetBy = Automatic
+
+	column censoring_risk_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 965ca6dd-4684-4685-b88b-92d95b3979a8
+		summarizeBy: none
+		sourceColumn: censoring_risk_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column persistent_underforecast_flag
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 61e0bc36-0790-40a4-81e9-e12b5d2d86dd
+		summarizeBy: none
+		sourceColumn: persistent_underforecast_flag
+
+		annotation SummarizationSetBy = Automatic
+
+	column demand_observation_risk_cell
+		dataType: string
+		lineageTag: 43fef25a-16db-44fe-815b-5f7df26921ed
+		summarizeBy: none
+		sourceColumn: demand_observation_risk_cell
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_series = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\dim_series.csv"),[Delimiter=",", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"series_key", Int64.Type}, {"store_id", Int64.Type}, {"product_id", Int64.Type}, {"abc_class", type text}, {"xyz_class", type text}, {"stockout_exposure", type text}, {"censoring_risk_flag", type logical}, {"persistent_underforecast_flag", type logical}, {"demand_observation_risk_cell", type text}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

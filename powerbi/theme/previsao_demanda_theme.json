@@ -1,0 +1,130 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/powerbi-desktop-samples/main/Report%20Theme%20JSON%20Schema/reportThemeSchema-2.157.json",
+  "name": "Previsão de demanda · Editorial",
+  "dataColors": [
+    "#2F6659",
+    "#9AA19E",
+    "#A17C56",
+    "#54786B",
+    "#6F9388",
+    "#B7CBC4"
+  ],
+  "background": "#F7F5F0",
+  "foreground": "#202927",
+  "tableAccent": "#2F6659",
+  "good": "#2F6659",
+  "neutral": "#A17C56",
+  "bad": "#9B5145",
+  "textClasses": {
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 18.75,
+      "color": "#202927"
+    },
+    "header": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 10.5,
+      "color": "#202927"
+    },
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 8,
+      "color": "#68716E"
+    },
+    "callout": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 18,
+      "color": "#202927"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": false
+          }
+        ],
+        "border": [
+          {
+            "show": false
+          }
+        ],
+        "dropShadow": [
+          {
+            "show": false
+          }
+        ],
+        "title": [
+          {
+            "fontFamily": "Segoe UI Semibold",
+            "fontColor": {
+              "solid": {
+                "color": "#202927"
+              }
+            },
+            "fontSize": 10.5
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F7F5F0"
+              }
+            },
+            "transparency": 0
+          }
+        ]
+      }
+    },
+    "cardVisual": {
+      "*": {
+        "outline": [
+          {
+            "show": false
+          }
+        ],
+        "fillCustom": [
+          {
+            "show": false,
+            "transparency": 100
+          }
+        ],
+        "shadowCustom": [
+          {
+            "show": false
+          }
+        ],
+        "label": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 8,
+            "fontColor": {
+              "solid": {
+                "color": "#68716E"
+              }
+            },
+            "position": "aboveValue"
+          }
+        ],
+        "value": [
+          {
+            "fontFamily": "Segoe UI Semibold",
+            "fontSize": 18,
+            "fontColor": {
+              "solid": {
+                "color": "#202927"
+              }
+            },
+            "labelDisplayUnits": 1
+          }
+        ]
+      }
+    }
+  }
+}

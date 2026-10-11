@@ -1,0 +1,105 @@
+table dim_date
+	lineageTag: ce16987c-853b-4c6d-a1b3-44140f4c82f3
+
+	column date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 0edbfe75-26f9-4822-8d01-afc4f27de4b8
+		summarizeBy: none
+		sourceColumn: date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d3737cc-7e80-46d1-9868-88c2e42a186c
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_number
+		dataType: int64
+		formatString: 0
+		lineageTag: 4018a450-8ddb-4f8f-9a5f-c878090e3b26
+		summarizeBy: none
+		sourceColumn: month_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column month_name
+		dataType: string
+		lineageTag: d74b9f02-344d-4c2d-a78b-9be36da9af7a
+		summarizeBy: none
+		sourceColumn: month_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column year_month
+		dataType: string
+		lineageTag: bb164c83-cd39-43db-81a2-b2a03d0cdba6
+		summarizeBy: none
+		sourceColumn: year_month
+
+		annotation SummarizationSetBy = Automatic
+
+	column day
+		dataType: int64
+		formatString: 0
+		lineageTag: 5e174385-e662-4a6f-953a-a32e7e4b409a
+		summarizeBy: none
+		sourceColumn: day
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_week_number
+		dataType: int64
+		formatString: 0
+		lineageTag: a536e961-392f-495e-abeb-804a8618030d
+		summarizeBy: none
+		sourceColumn: day_of_week_number
+
+		annotation SummarizationSetBy = Automatic
+
+	column day_of_week_name
+		dataType: string
+		lineageTag: 32c0049b-ac25-4119-9a74-d69822cf9611
+		summarizeBy: none
+		sourceColumn: day_of_week_name
+
+		annotation SummarizationSetBy = Automatic
+
+	column is_weekend
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 0fbf0b83-b8b3-417e-8672-91838352cd08
+		summarizeBy: none
+		sourceColumn: is_weekend
+
+		annotation SummarizationSetBy = Automatic
+
+	column date_sort
+		dataType: int64
+		formatString: 0
+		lineageTag: 3b00a75c-e869-4f20-bb75-1a8fe8f68025
+		summarizeBy: none
+		sourceColumn: date_sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition dim_date = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(pPowerBIDataRoot & "\dim_date.csv"),[Delimiter=",", Columns=10, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"date", type date}, {"year", Int64.Type}, {"month_number", Int64.Type}, {"month_name", type text}, {"year_month", type text}, {"day", Int64.Type}, {"day_of_week_number", Int64.Type}, {"day_of_week_name", type text}, {"is_weekend", type logical}, {"date_sort", Int64.Type}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_NavigationStepName = Navegação
+
+	annotation PBI_ResultType = Table

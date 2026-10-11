@@ -1,0 +1,248 @@
+table _Medidas
+	lineageTag: 47cc77c8-20b3-48bf-b7f6-0bbc4759e426
+
+	measure 'Forecast Rows' =
+
+			COUNTROWS ( fact_forecast )
+		formatString: 0
+		displayFolder: 01 Forecast
+		lineageTag: 1fcfd9ee-b53b-4178-a616-e73d02ac1cc1
+
+	/// Erro absoluto médio na escala normalizada. Requer exatamente 1 model.
+	measure MAE = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[absolute_error] ), COUNTROWS ( fact_forecast ) ), BLANK () )
+		formatString: 0.000
+		displayFolder: 01 Forecast
+		lineageTag: 504e8b34-6fa6-4e76-9070-690f34c125ae
+
+	/// Raiz da média dos erros quadráticos; não média de RMSEs. Requer exatamente 1 model.
+	measure RMSE = IF ( HASONEVALUE ( fact_forecast[model] ), SQRT ( DIVIDE ( SUM ( fact_forecast[squared_error] ), COUNTROWS ( fact_forecast ) ) ), BLANK () )
+		formatString: 0.000
+		displayFolder: 01 Forecast
+		lineageTag: 3d2afee0-f316-4d6b-8e12-1b1a4ec624cb
+
+	/// Ratio das somas dos erros absolutos e actual; nunca média de WAPEs. Requer 1 model; denominador zero retorna BLANK.
+	measure WAPE = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[absolute_error] ), SUM ( fact_forecast[actual] ) ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: 5abb12da-e8c3-4d3c-bf67-a8bb22f3a9d5
+
+	/// Erro assinado relativo ao actual; negativo indica subprevisão. Requer 1 model; denominador zero retorna BLANK.
+	measure 'Bias %' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( SUM ( fact_forecast[error] ), SUM ( fact_forecast[actual] ) ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: 2e48250e-d931-4dd0-913a-94df642ae091
+
+	/// Melhoria relativa do WAPE ETS contra o baseline. BLANK se faltar algum modelo ou baseline tiver WAPE zero.
+	/// Buffer simulado médio na escala normalizada, não unidades físicas. Requer 1 cenário; não é compra recomendada ou estoque real.
+	measure 'Average Safety Stock' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[safety_stock] ), BLANK () )
+		formatString: 0.000
+		displayFolder: 02 Replenishment
+		lineageTag: cdcd7e42-c3b3-4fdc-85bb-e0556cecf66c
+
+	/// Limiar simulado médio na escala normalizada, não estoque físico. Requer 1 cenário; sem posição atual ou quantidade a comprar.
+	measure 'Average Reorder Point' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[reorder_point] ), BLANK () )
+		formatString: 0.000
+		displayFolder: 02 Replenishment
+		lineageTag: 5c39f866-3cae-4652-ba34-45fb986100ae
+
+	/// Actual único, usando ETS como cópia canônica para evitar duplicação entre modelos. Remove somente model/model_code; mantém date e filtros de dim_series.
+	measure 'Actual Total' = CALCULATE ( CALCULATE ( SUM ( fact_forecast[actual] ), fact_forecast[model] = "ETS" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+		formatString: #,##0.00
+		displayFolder: 01 Forecast
+		lineageTag: fa9c425e-9d92-43bf-b66d-f3e14c6262d1
+
+	/// Soma do forecast congelado na escala normalizada. Requer 1 model; não soma modelos alternativos.
+	measure 'Forecast Total' = IF ( HASONEVALUE ( fact_forecast[model] ), SUM ( fact_forecast[forecast] ), BLANK () )
+		formatString: #,##0.00
+		displayFolder: 01 Forecast
+		lineageTag: 1bbb9679-7b81-4d12-880d-6a71c812e7d6
+
+	/// Proporção de previsões diárias com error < 0. Requer 1 model; zero ocorrências dá 0; sem linhas dá BLANK.
+	measure 'Underforecast Rate' = IF ( HASONEVALUE ( fact_forecast[model] ), DIVIDE ( COALESCE ( COUNTROWS ( FILTER ( fact_forecast, fact_forecast[error] < 0 ) ), 0 ), COUNTROWS ( fact_forecast ) ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: e651f21c-0a00-4b5a-9e4f-8ba7b8da8b53
+
+	/// WAPE do ETS independentemente do filtro atual de modelo. Limpa model e model_code; preserva filtros de datas/séries.
+	measure 'ETS WAPE' = CALCULATE ( CALCULATE ( [WAPE], fact_forecast[model] = "ETS" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: 858d15e8-45fc-4f91-b40c-5de76ed102ca
+
+	/// WAPE do baseline Seasonal Naive. Limpa model e model_code; preserva filtros de datas/séries.
+	measure 'Seasonal Naive WAPE' = CALCULATE ( CALCULATE ( [WAPE], fact_forecast[model] = "Seasonal Naive" ), REMOVEFILTERS ( fact_forecast[model], fact_forecast[model_code] ) )
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: 286788a3-9160-453c-b0fb-dae48920398a
+
+	/// Ratio das somas de buffer e forecast acumulado, não média dos ratios individuais. Requer 1 cenário; denominador zero retorna BLANK.
+	measure 'Buffer Ratio' = IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( SUM ( fact_replenishment[safety_stock] ), SUM ( fact_replenishment[lead_time_forecast] ) ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 02 Replenishment
+		lineageTag: 7c4381a2-6117-4801-ae4f-52bdb8067dea
+
+	/// Média da cobertura equivalente; ignora BLANKs e não representa dias reais garantidos de estoque. Requer 1 cenário; equivalência na escala prevista.
+	measure 'Average Equivalent Coverage Days' = IF ( HASONEVALUE ( dim_scenario[scenario] ), AVERAGE ( fact_replenishment[equivalent_coverage_days] ), BLANK () )
+		formatString: 0.000
+		displayFolder: 02 Replenishment
+		lineageTag: 2a8a766a-f937-41bd-ab0c-c22efc0b7399
+
+	/// Proporção de séries com buffer simulado acima do forecast de lead time. Requer 1 cenário; não indica ruptura nem recomendação de compra.
+	measure 'Safety Stock Above Forecast Rate' = IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( COALESCE ( COUNTROWS ( FILTER ( fact_replenishment, fact_replenishment[safety_stock] > fact_replenishment[lead_time_forecast] ) ), 0 ), COUNTROWS ( fact_replenishment ) ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 02 Replenishment
+		lineageTag: 1876a2c1-cead-4355-86fc-41ef9e14a2d5
+
+	/// Hipótese de cobertura do cenário, não service level real, fill rate ou OTIF. Requer 1 cenário; não responde a filtros de série ou data.
+	measure 'Target Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[target_coverage_level] ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 03 Validation
+		lineageTag: cfc4e3d1-ed6d-4f5b-b07b-39e638faf9bb
+
+	/// Resultado global da validação temporal histórica no fold4. Requer 1 cenário; não responde a filtros de série ou data.
+	measure 'Observed Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[observed_coverage_rate] ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 03 Validation
+		lineageTag: 417063bf-5db9-4aca-85bb-2a5ed0f90d4c
+
+	/// Cobertura observada menos target; fração assinada equivalente a pontos percentuais ao multiplicar por 100. Requer 1 cenário; não responde a filtros de série ou data.
+	measure 'Coverage Gap' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[coverage_gap] ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 03 Validation
+		lineageTag: 32e77235-053f-4edf-a010-0493ddc13835
+
+	/// Cobertura histórica global da referência Normal no fold4. Requer 1 cenário; não responde a filtros de série ou data.
+	measure 'Normal Reference Coverage' = IF ( HASONEVALUE ( dim_scenario[scenario] ), SELECTEDVALUE ( fact_scenario_validation[normal_reference_coverage] ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 03 Validation
+		lineageTag: bfc4bd7c-b740-472a-925e-b5107ba2a168
+
+	/// Compara a cobertura histórica com o target hipotético. Requer 1 cenário e gap disponível; BLANK não é target atingido.
+	/// Quantidade de séries distintas no contexto da dimensão. Responde a filtros de dim_series; datas/modelos não retrofiltram a dimensão.
+	measure 'Series Count' = DISTINCTCOUNT ( dim_series[series_key] )
+		formatString: #,##0
+		displayFolder: 04 Executive
+		lineageTag: 54c6743f-4428-48ac-892e-b92d068714c6
+
+	/// Quantidade de séries HIGH no contexto atual. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+	/// Quantidade de séries com os dois sinais históricos. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+	/// Quantidade de séries A com os dois sinais históricos. Interseção com os filtros atuais; retorna 0 quando não há séries elegíveis.
+	/// Participação de A no buffer simulado do cenário. Requer 1 cenário; força A no numerador e remove só abc_class no denominador; mantém os demais filtros.
+	measure 'A Buffer Share' = VAR Numerator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), dim_series[abc_class] = "A" ) VAR Denominator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), REMOVEFILTERS ( dim_series[abc_class] ) ) RETURN IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( Numerator, Denominator ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 04 Executive
+		lineageTag: 5ed1b699-cd5b-4e90-bf3f-9f922dd3baf4
+
+	/// Participação de Z no buffer simulado do cenário. Requer 1 cenário; força Z no numerador e remove só xyz_class no denominador; mantém os demais filtros.
+	measure 'Z Buffer Share' = VAR Numerator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), dim_series[xyz_class] = "Z" ) VAR Denominator = CALCULATE ( SUM ( fact_replenishment[safety_stock] ), REMOVEFILTERS ( dim_series[xyz_class] ) ) RETURN IF ( HASONEVALUE ( dim_scenario[scenario] ), DIVIDE ( Numerator, Denominator ), BLANK () )
+		formatString: 0.00%
+		displayFolder: 04 Executive
+		lineageTag: 9a79f0a7-06df-4764-967e-db5e63fe7677
+
+	/// Buffer simulado médio das séries HIGH; escala normalizada. Requer 1 cenário; intersecta exposure com o filtro atual, sem forçar HIGH sobre LOW.
+	measure 'High Exposure Average Safety Stock' = CALCULATE ( [Average Safety Stock], KEEPFILTERS ( dim_series[stockout_exposure] = "HIGH" ) )
+		formatString: 0.000
+		displayFolder: 04 Executive
+		lineageTag: b0a0c98e-d925-455d-bb79-ea6741bb0157
+
+	/// Cenário único ou instrução textual de seleção. Nenhum ou vários cenários: Selecione um cenário.
+	measure 'Selected Scenario' = SELECTEDVALUE ( dim_scenario[scenario], "Selecione um cenário" )
+		displayFolder: 04 Executive
+		lineageTag: d8a173a3-84c2-40d2-8cd2-e446cc934568
+
+	/// Melhoria relativa do WAPE ETS contra o baseline. BLANK se faltar algum modelo ou baseline tiver WAPE zero.
+	measure 'WAPE Improvement vs Baseline' =
+			VAR EtsWape = [ETS WAPE]
+			VAR BaselineWape = [Seasonal Naive WAPE]
+			RETURN
+				IF (
+					NOT ISBLANK ( EtsWape )
+						&& NOT ISBLANK ( BaselineWape ),
+					DIVIDE ( BaselineWape - EtsWape, BaselineWape ),
+					BLANK ()
+				)
+		formatString: 0.00%
+		displayFolder: 01 Forecast
+		lineageTag: a9e4c2b0-673c-475f-ac58-86c3a381c770
+
+	/// Compara a cobertura histórica com o target hipotético. Requer 1 cenário e gap disponível.
+	measure 'Coverage Status' =
+			VAR Gap = [Coverage Gap]
+			RETURN
+				IF (
+					HASONEVALUE ( dim_scenario[scenario] )
+						&& NOT ISBLANK ( Gap ),
+					IF ( Gap >= 0, "Target atingido", "Abaixo do target" ),
+					BLANK ()
+				)
+		displayFolder: 03 Validation
+		lineageTag: fa26f259-2a20-467f-933e-3fa91e56771b
+
+	/// Quantidade de séries com exposição HIGH dentro do contexto atual.
+	measure 'High Exposure Series' =
+			COALESCE (
+				CALCULATE (
+					[Series Count],
+					KEEPFILTERS ( dim_series[stockout_exposure] = "HIGH" )
+				),
+				0
+			)
+		formatString: #,##0
+		displayFolder: 04 Executive
+		lineageTag: 5755fbd4-61d7-4b62-a0ca-ea8a4e69bb28
+
+	/// Quantidade de séries com censura e subprevisão persistente simultaneamente.
+	measure 'Double Signal Series' =
+			COALESCE (
+				CALCULATE (
+					[Series Count],
+					KEEPFILTERS (
+						dim_series[demand_observation_risk_cell]
+							= "CENSORING_AND_UNDERFORECAST"
+					)
+				),
+				0
+			)
+		formatString: #,##0
+		displayFolder: 04 Executive
+		lineageTag: 4b3745e9-bff9-48a6-b7f3-71888bbf3ea0
+
+	/// Quantidade de séries classe A com os dois sinais históricos.
+	measure 'A Double Signal Series' =
+			COALESCE (
+				CALCULATE (
+					[Series Count],
+					KEEPFILTERS ( dim_series[abc_class] = "A" ),
+					KEEPFILTERS (
+						dim_series[demand_observation_risk_cell]
+							= "CENSORING_AND_UNDERFORECAST"
+					)
+				),
+				0
+			)
+		formatString: #,##0
+		displayFolder: 04 Executive
+		lineageTag: 7dd52f44-53f3-4b16-9b1a-2d2156f8aaa2
+
+	column Dummy
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5acfd87a-2f43-4909-a0ea-ed2d34f8492c
+		summarizeBy: sum
+		sourceColumn: Dummy
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Medidas = m
+		mode: import
+		source =
+				let
+				    Fonte = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WMlSKjQUA", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Dummy = _t]),
+				    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Dummy", Int64.Type}})
+				in
+				    #"Tipo Alterado"
+
+	annotation PBI_ResultType = Table

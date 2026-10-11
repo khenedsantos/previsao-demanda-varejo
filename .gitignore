@@ -47,8 +47,18 @@ service-account*.json
 Thumbs.db
 
 # Estado local do Power BI; definições e documentação permanecem versionadas
+*.pbix
 **/.pbi/localSettings.json
 **/.pbi/cache.abf
+**/.pbi/unappliedChanges.json
+# Abas de scripts de edição locais; o pacote canônico fica em powerbi/tmdl/
+/powerbi/*.SemanticModel/TMDLScripts/
+# Backups, locks e temporários do Power BI
+*.pbix.autosave
+*.pbip.autosave
+/powerbi/**/*.lock
+*.bak
+*.backup
 
 # Camada BI reproduzível; dicionário e contrato permanecem versionados
 /powerbi/data/*

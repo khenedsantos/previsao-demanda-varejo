@@ -1,0 +1,196 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "6d90ba5ea6957ec317d5",
+  "position": {
+    "x": 133.41203455921706,
+    "y": 841.81114764125687,
+    "z": 4,
+    "height": 214.21087239085554,
+    "width": 761.01230980961839,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_scenario"
+                    }
+                  },
+                  "Property": "scenario"
+                }
+              },
+              "queryRef": "dim_scenario.scenario",
+              "nativeQueryRef": "scenario"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Target Coverage"
+                }
+              },
+              "queryRef": "_Medidas.Target Coverage",
+              "nativeQueryRef": "Target Coverage"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Observed Coverage"
+                }
+              },
+              "queryRef": "_Medidas.Observed Coverage",
+              "nativeQueryRef": "Observed Coverage"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Coverage Gap"
+                }
+              },
+              "queryRef": "_Medidas.Coverage Gap",
+              "nativeQueryRef": "Coverage Gap"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Normal Reference Coverage"
+                }
+              },
+              "queryRef": "_Medidas.Normal Reference Coverage",
+              "nativeQueryRef": "Normal Reference Coverage"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Coverage Status"
+                }
+              },
+              "queryRef": "_Medidas.Coverage Status",
+              "nativeQueryRef": "Coverage Status"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "dfbdd44a57201cce4a4e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_scenario"
+              }
+            },
+            "Property": "scenario"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c1cabf24f6a5a413ff7c",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Target Coverage"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "258422f4f0f5dfc72d50",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Observed Coverage"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "ea6c9c1ac2c31fb15b16",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Coverage Gap"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "774aec0734fd83726b84",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Normal Reference Coverage"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "19a48472aab8d8d419df",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Coverage Status"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

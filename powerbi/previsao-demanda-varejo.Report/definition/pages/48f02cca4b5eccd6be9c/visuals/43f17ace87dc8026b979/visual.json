@@ -1,0 +1,168 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.13.0/schema.json",
+  "name": "43f17ace87dc8026b979",
+  "position": {
+    "x": 132.67792763940486,
+    "y": 485.73614186629578,
+    "z": 3,
+    "height": 292.34119649360395,
+    "width": 760.0871108833702,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "dim_scenario"
+                    }
+                  },
+                  "Property": "scenario"
+                }
+              },
+              "queryRef": "dim_scenario.scenario",
+              "nativeQueryRef": "scenario"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Average Safety Stock"
+                }
+              },
+              "queryRef": "_Medidas.Average Safety Stock",
+              "nativeQueryRef": "Average Safety Stock"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Average Reorder Point"
+                }
+              },
+              "queryRef": "_Medidas.Average Reorder Point",
+              "nativeQueryRef": "Average Reorder Point"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Buffer Ratio"
+                }
+              },
+              "queryRef": "_Medidas.Buffer Ratio",
+              "nativeQueryRef": "Buffer Ratio"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Medidas"
+                    }
+                  },
+                  "Property": "Safety Stock Above Forecast Rate"
+                }
+              },
+              "queryRef": "_Medidas.Safety Stock Above Forecast Rate",
+              "nativeQueryRef": "Safety Stock Above Forecast Rate"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "26d3e0472f9520a6a4bf",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "dim_scenario"
+              }
+            },
+            "Property": "scenario"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a492e881d676f8356068",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Average Safety Stock"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "96186eec88ae1ab77b19",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Average Reorder Point"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "76bf0e7ab7cee609b1ef",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Buffer Ratio"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0553a8c89486e2d7ab17",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Medidas"
+              }
+            },
+            "Property": "Safety Stock Above Forecast Rate"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

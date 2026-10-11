@@ -1,0 +1,19 @@
+relationship e55c864f-24df-9f98-3cc9-dbcc09364a08
+	fromColumn: fact_forecast.series_key
+	toColumn: dim_series.series_key
+
+relationship 2c0dae2a-88a5-4348-028d-186ee4790008
+	fromColumn: fact_replenishment.series_key
+	toColumn: dim_series.series_key
+
+relationship bfbcb56a-08f8-855e-033a-f0e86c5d1188
+	fromColumn: fact_forecast.date
+	toColumn: dim_date.date
+
+relationship fb95a6ae-12c7-ca2c-04a0-d5df0cec12e5
+	fromColumn: fact_replenishment.scenario
+	toColumn: dim_scenario.scenario
+
+relationship 3f88d7ab-e4d7-1b10-f330-d297deb46f41
+	fromColumn: fact_scenario_validation.scenario
+	toColumn: dim_scenario.scenario
