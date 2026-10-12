@@ -1,5 +1,15 @@
 # Validação de fechamento
 
+> **Nota factual de atualização — 12/10/2026:** o texto abaixo preserva o checkpoint
+> histórico de preparação, inclusive o bloqueio de whitespace. Posteriormente foram
+> realizados os commits [7878ee6](https://github.com/khenedsantos/previsao-demanda-varejo/commit/7878ee6)
+> (`feat: add Power BI decision report and portable sources`) e
+> [6040751](https://github.com/khenedsantos/previsao-demanda-varejo/commit/6040751)
+> (`docs: finalize retail demand portfolio documentation`), ambos em 11/10/2026.
+> Assim, as referências abaixo a arquivos no stage, bloqueio e ausência de commits
+> descrevem aquele checkpoint, não o estado posterior à entrega. Esta nota não
+> declara reexecução de testes nem amplia o alcance das validações registradas.
+
 Fechamento de documentação e empacotamento sobre `main`, HEAD `850032d`.
 Na rodada inicial não houve staging, commit, push, refresh ou fitting ETS. Na preparação
 seguinte, somente o primeiro commit planejado foi colocado no stage para revisão;

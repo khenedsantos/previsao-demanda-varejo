@@ -1,0 +1,27 @@
+# Preparação para discussão técnica
+
+Roteiro de estudo das decisões implementadas, não respostas prontas nem declaração
+de domínio do autor. Cada ponto deve poder ser explicado com um exemplo pequeno e
+uma referência verificável. Não é necessário repetir pipelines populacionais.
+
+| Pergunta | O que demonstrar | Referências |
+|---|---|---|
+| Por que Seasonal Naive foi a referência? O que motivou o ETS A/N/A? | Construir uma previsão t−7, explicar sazonalidade semanal e ausência de tendência; distinguir benchmark A/A/A de comparação populacional e descrever fallback/clipping. | [Baselines](forecasting_baselines_report.md), [ETS](statistical_forecasting_report.md), [código ETS](../src/forecasting/ets.py) |
+| Por que WAPE, RMSE e bias podem discordar? | Calcular um exemplo, explicar erro como forecast−actual, denominador zero e agregação por somas; mostrar por que menor WAPE não garante menor bias absoluto. | [Métricas](../src/validation/forecast_metrics.py), [testes](../tests/test_forecasting_baselines.py), [holdout](final_holdout_evaluation_report.md) |
+| Como o backtesting impede leakage? O que muda no holdout? | Desenhar cutoff, origem e horizonte; explicar snapshots prospectivos e o teste de mutação do futuro; reconhecer que eval já utilizado não é um novo teste independente. | [Backtesting](../src/forecasting/backtesting.py), [teste temporal](../tests/test_forecasting_baselines.py), [protocolo](final_holdout_protocol.md) |
+| Por que ABC por produto e XYZ com duas métricas? | Explicar o item que cruza o limite ABC, desempates, complementaridade CV/forma, alternativas XYZ, nulos e sensibilidade aos quantis. Não equiparar Z a dificuldade preditiva comprovada. | [Segmentação](segmentation_report.md), [ABC](../src/segmentation/abc.py), [XYZ](../src/segmentation/xyz.py), [testes](../tests/test_segmentation.py) |
+| O que distingue exposição, censura potencial e subprevisão persistente? | Reconstruir a matriz de flags e a regra de persistência; explicar por que duplo sinal não mede vendas perdidas e apresentar a confirmação limitada no holdout. | [Risco](forecast_uncertainty_and_risk_report.md), [implementação](../src/segmentation/demand_risk.py), [holdout](final_holdout_evaluation_report.md) |
+| Como são calculados buffer e limiar simulados? | Explicar shortfall, escala histórica, quantil, suporte mínimo e hierarquia; separar calibração 1–3 → 4 do snapshot final e explicar por que não há quantidade a comprar. | [Protocolo](replenishment_simulation_protocol.md), [simulação](../src/replenishment/simulation.py), [testes](../tests/test_replenishment_simulation.py) |
+| Como evitar duplicação e percentuais incorretos no Power BI? | Identificar grãos, chaves e cinco relações 1:N; justificar direção de filtro, WAPE como razão de somas e proteção de contexto por modelo. Explicar por que cobertura global não pode ser segmentada artificialmente. | [Contrato](powerbi_data_contract.md), [medidas](powerbi_measures.md), [TMDL](../powerbi/previsao-demanda-varejo.SemanticModel/definition/tables/_Medidas.tmdl), [testes BI](../tests/test_powerbi_layer.py) |
+| Qual correção pode ser demonstrada por diff e teste? | Examinar a duração indefinida em históricos sem ruptura no commit `4dfaa9d`; distinguir esse caso do relato de memória cujo log original é local. | [Índice de evidências](development_decisions_and_evidence.md), [teste de regressão](../tests/test_forecasting_baselines.py) |
+| Como traduzir o resultado em decisão sem prometer demais? | Explicar o ganho do ETS, o bias desfavorável, a subcobertura dos cenários e os dados operacionais ainda necessários antes de automatizar pedidos. | [Relatório Power BI](powerbi_report.md), [limitações](limitations.md), [README](../README.md) |
+
+## Pontos que exigem confirmação pessoal
+
+- Quais decisões o autor propôs, revisou ou aceitou, e que registro sustenta cada atribuição?
+- Quais ferramentas de IA foram usadas, em quais tarefas, e como os resultados foram conferidos?
+- Quais partes o autor consegue explicar ou demonstrar hoje sem recorrer a uma resposta pronta?
+
+As respostas devem refletir fatos confirmados e conhecimento demonstrável. Quando a
+atribuição não estiver registrada, explicitar a lacuna; não transformar uma justificativa
+do repositório em lembrança pessoal retrospectiva.

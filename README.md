@@ -216,3 +216,9 @@ Comece pelo [walkthrough do portfólio](docs/portfolio_walkthrough.md). Depois c
 **Stack utilizada:** Python, pandas, NumPy, statsmodels, DuckDB, PyArrow, pytest,
 matplotlib/Jupyter, Power BI, DAX, PBIP/PBIR e Git. scikit-learn integra o ambiente e
 o teste de importação; não foi usado para treinar um modelo adicional.
+
+## Decisões de desenvolvimento e evidências
+
+O [índice de evidências](docs/development_decisions_and_evidence.md) reúne referências
+a commits, decisões, correções e validações, distinguindo evidência técnica de atribuição
+de contribuições individuais.
