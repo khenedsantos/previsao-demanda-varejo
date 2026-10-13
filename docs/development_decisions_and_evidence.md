@@ -72,5 +72,3 @@ atestação independente de data.
 - **A/B:** [final_validation.md](final_validation.md) registra 136 testes aprovados
   e 12 exclusões; logs completos e guard temporário não estão no Git. Isso documenta
   aquela execução, sem afirmar uma nova execução ou validação integral do motor Power BI.
-
-Para preparar uma demonstração técnica, consulte as [perguntas de estudo](technical_interview_preparation.md).
