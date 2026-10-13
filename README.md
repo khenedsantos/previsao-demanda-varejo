@@ -220,5 +220,4 @@ o teste de importação; não foi usado para treinar um modelo adicional.
 ## Decisões de desenvolvimento e evidências
 
 O [índice de evidências](docs/development_decisions_and_evidence.md) reúne referências
-a commits, decisões, correções e validações, distinguindo evidência técnica de atribuição
-de contribuições individuais.
+a commits, decisões, correções e validações, com seus limites de evidência.

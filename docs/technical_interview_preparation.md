@@ -1,8 +1,8 @@
 # Preparação para discussão técnica
 
-Roteiro de estudo das decisões implementadas, não respostas prontas nem declaração
-de domínio do autor. Cada ponto deve poder ser explicado com um exemplo pequeno e
-uma referência verificável. Não é necessário repetir pipelines populacionais.
+Roteiro de estudo das decisões implementadas. Cada ponto deve poder ser explicado
+com um exemplo pequeno e uma referência verificável. Não é necessário repetir
+pipelines populacionais.
 
 | Pergunta | O que demonstrar | Referências |
 |---|---|---|
@@ -15,13 +15,3 @@ uma referência verificável. Não é necessário repetir pipelines populacionai
 | Como evitar duplicação e percentuais incorretos no Power BI? | Identificar grãos, chaves e cinco relações 1:N; justificar direção de filtro, WAPE como razão de somas e proteção de contexto por modelo. Explicar por que cobertura global não pode ser segmentada artificialmente. | [Contrato](powerbi_data_contract.md), [medidas](powerbi_measures.md), [TMDL](../powerbi/previsao-demanda-varejo.SemanticModel/definition/tables/_Medidas.tmdl), [testes BI](../tests/test_powerbi_layer.py) |
 | Qual correção pode ser demonstrada por diff e teste? | Examinar a duração indefinida em históricos sem ruptura no commit `4dfaa9d`; distinguir esse caso do relato de memória cujo log original é local. | [Índice de evidências](development_decisions_and_evidence.md), [teste de regressão](../tests/test_forecasting_baselines.py) |
 | Como traduzir o resultado em decisão sem prometer demais? | Explicar o ganho do ETS, o bias desfavorável, a subcobertura dos cenários e os dados operacionais ainda necessários antes de automatizar pedidos. | [Relatório Power BI](powerbi_report.md), [limitações](limitations.md), [README](../README.md) |
-
-## Pontos que exigem confirmação pessoal
-
-- Quais decisões o autor propôs, revisou ou aceitou, e que registro sustenta cada atribuição?
-- Quais ferramentas de IA foram usadas, em quais tarefas, e como os resultados foram conferidos?
-- Quais partes o autor consegue explicar ou demonstrar hoje sem recorrer a uma resposta pronta?
-
-As respostas devem refletir fatos confirmados e conhecimento demonstrável. Quando a
-atribuição não estiver registrada, explicitar a lacuna; não transformar uma justificativa
-do repositório em lembrança pessoal retrospectiva.

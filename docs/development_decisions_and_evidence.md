@@ -5,9 +5,9 @@ de negócio e os resultados estão no [README](../README.md); as justificativas 
 fase permanecem em [decisions.md](decisions.md), sem serem reproduzidas aqui.
 
 **A — Comprovada:** existe código, teste, commit ou relatório identificável.
-**B — Parcial:** a implementação é verificável, mas parte da proveniência ou atribuição não é.
-**C — Não comprovada:** depende de confirmação do autor. Essas classes qualificam
-a evidência, não a qualidade do modelo nem a autoria humana exclusiva.
+**B — Parcial:** a implementação é verificável, mas parte da proveniência não é.
+**C — Não comprovada:** requer evidência adicional. Essas classes qualificam
+a evidência, não a qualidade do modelo.
 
 ## Evolução incremental
 
@@ -25,7 +25,7 @@ O histórico contém 12 commits até `6040751`. Alguns marcos verificáveis:
 | Documentação e capturas finais | [6040751](https://github.com/khenedsantos/previsao-demanda-varejo/commit/6040751) |
 
 **A:** entregas incrementais. **B:** os commits agregam trabalho por fase; não
-registram todas as tentativas nem demonstram quem concebeu cada decisão.
+registram todas as tentativas.
 
 ## Problemas e correções
 
@@ -72,20 +72,5 @@ atestação independente de data.
 - **A/B:** [final_validation.md](final_validation.md) registra 136 testes aprovados
   e 12 exclusões; logs completos e guard temporário não estão no Git. Isso documenta
   aquela execução, sem afirmar uma nova execução ou validação integral do motor Power BI.
-
-## Evidência técnica, contribuição pessoal e IA
-
-Código e commits permitem inspecionar o resultado. Justificativas documentadas não
-comprovam quem as formulou; o campo de autor do Git não mede contribuição intelectual.
-Afirmações sobre decisões individuais, intervenções manuais específicas, ferramentas
-utilizadas e divisão das tarefas são **C** até confirmação do autor.
-
-### Assistência de inteligência artificial
-
-Este projeto foi desenvolvido com apoio de ferramentas de inteligência artificial durante o processo de desenvolvimento e documentação.
-
-O repositório disponibiliza implementações, decisões metodológicas, testes, resultados e limitações que permitem examinar tecnicamente a solução.
-
-A utilização dessas ferramentas não deve ser interpretada como desenvolvimento exclusivamente manual, assim como os registros do repositório não permitem atribuir individualmente cada decisão ou implementação.
 
 Para preparar uma demonstração técnica, consulte as [perguntas de estudo](technical_interview_preparation.md).
